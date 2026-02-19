@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sports Betting Dashboard</title>
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+    #root { width: 100vw; height: 100vh; }
+    .loader { display:flex;align-items:center;justify-content:center;height:100vh;background:#0A0E1A;color:#8B92B0;font-size:14px; }
+  </style>
+</head>
+<body>
+  <div id="root"><div class="loader">Loading dashboard…</div></div>
+
+  <script type="text/plain" id="app-source">
+    const { useState, useMemo, useCallback, useEffect, useRef } = React;
+    const NUM = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+
+    function fmtDate(d) { return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`; }
+    function parseYMD(s) { if (!s || s.length !== 8) return null; return new Date(+s.slice(0,4), +s.slice(4,6)-1, +s.slice(6,8)); }
+    function friendlyDate(ymd) {
+      const d = parseYMD(ymd); if (!d) return ymd;
+      const now = new Date(), today = fmtDate(now);
+      const tmrw = new Date(now); tmrw.setDate(tmrw.getDate()+1); const tomorrow = fmtDate(tmrw);
+      const yest = new Date(now); yest.setDate(yest.getDate()-1); const yesterday = fmtDate(yest);
+      if (ymd === today) return "Today";
+      if (ymd === tomorrow) return "Tomorrow";
+      if (ymd === yesterday) return "Yesterday";
+      return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    }
+    function getGameDate(row) { const m = (row.game_id || "").match(/_([\d]{8})_/); return m ? m[1] : ""; }
+
+    const ESPN_EP = {
+      cbb: "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard",
+      wcbb: "https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard",
+      nba: "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
+      nfl: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+      nhl: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",
+      mlb: "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard",
+      cfb: "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard",
+      cbase: "https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/scoreboard",
+    };
+    const SPORT_ALIASES = { ncaaf:"cfb", ncaab:"cbb", ncaam:"cbb", ncaaw:"wcbb", college_football:"cfb", college_basketball:"cbb" };
+
+    function normName(s) { return (s||"").toLowerCase().replace(/[^\w\s]/g,"").replace(/\s+/g," ").trim(); }
+    const ABBREVS={"s ":"south ","n ":"north ","e ":"east ","w ":"west ","c ":"central ","st ":"state ","st. ":"state ","mt ":"mount ","ft ":"fort ","u ":"university ","uc ":"uc ","so ":"southern ","no ":"northern ","fla ":"florida ","ga ":"georgia ","la ":"louisiana ","miss ":"mississippi ","ark ":"arkansas ","ala ":"alabama ","tenn ":"tennessee ","mich ":"michigan ","minn ":"minnesota ","conn ":"connecticut ","mass ":"massachusetts ","penn ":"penn ","col ":"colorado ","ore ":"oregon ","wash ":"washington ","okla ":"oklahoma ","neb ":"nebraska ","wis ":"wisconsin ","ill ":"illinois "};
+    function expandAbbrevs(s){let r=" "+s+" ";Object.entries(ABBREVS).forEach(([k,v])=>{r=r.replace(new RegExp(" "+k,"gi")," "+v);});return r.trim();}
+    function fuzzy(a, b) {
+      const x = normName(a), y = normName(b);
+      if (!x||!y) return false; if (x===y) return true;
+      const xn=x.replace(/\s/g,""), yn=y.replace(/\s/g,"");
+      if (xn.length>=4&&(xn.includes(yn)||yn.includes(xn))) return true;
+      if (x.length>=4&&(x.includes(y)||y.includes(x))) return true;
+      const xe=expandAbbrevs(x), ye=expandAbbrevs(y);
+      if (xe===ye) return true;
+      const xen=xe.replace(/\s/g,""), yen=ye.replace(/\s/g,"");
+      if (xen.length>=4&&(xen.includes(yen)||yen.includes(xen))) return true;
+      if (xe.length>=4&&(xe.includes(ye)||ye.includes(xe))) return true;
+      const xWords=x.split(" "), yWords=y.split(" ");
+      const lastX=xWords[xWords.length-1], lastY=yWords[yWords.length-1];
+      if (lastX.length>=4&&lastX===lastY) return true;
+      return false;
+    }
+
+    async function fetchESPN(sport, dateStr) {
+      const resolved = SPORT_ALIASES[sport] || sport;
+      const base = ESPN_EP[resolved]; if (!base) return {};
+      const urls = [
+        dateStr ? `${base}?dates=${dateStr}&groups=50&limit=200` : `${base}?groups=50&limit=200`,
+        dateStr ? `${base}?dates=${dateStr}&limit=200` : `${base}?limit=200`,
+      ];
+      const allGames = {};
+      for (const url of urls) {
+        try {
+          const r = await fetch(url), d = await r.json();
+          for (const ev of (d.events||[])) {
+            if (allGames[ev.id]) continue;
+            const c = ev.competitions?.[0]; if (!c) continue;
+            const aw = c.competitors?.find(x=>x.homeAway==="away"), hm = c.competitors?.find(x=>x.homeAway==="home");
+            if (!aw||!hm) continue;
+            const st = c.status?.type;
+            const awPer = (aw.linescores || []).map(p => parseInt(p.value) || 0);
+            const hmPer = (hm.linescores || []).map(p => parseInt(p.value) || 0);
+            const np = awPer.length;
+            let awH1=0,hmH1=0,awH2=0,hmH2=0;
+            if (np === 2) { awH1=awPer[0]; hmH1=hmPer[0]; awH2=awPer[1]; hmH2=hmPer[1]; }
+            else if (np >= 4) { awH1=awPer[0]+awPer[1]; hmH1=hmPer[0]+hmPer[1]; awH2=awPer.slice(2).reduce((a,b)=>a+b,0); hmH2=hmPer.slice(2).reduce((a,b)=>a+b,0); }
+            const startEpoch = c.date ? new Date(c.date).getTime() : 0;
+            allGames[ev.id] = {
+              aN: [aw.team?.displayName,aw.team?.shortDisplayName,aw.team?.name,aw.team?.location,aw.team?.abbreviation].filter(Boolean),
+              hN: [hm.team?.displayName,hm.team?.shortDisplayName,hm.team?.name,hm.team?.location,hm.team?.abbreviation].filter(Boolean),
+              aS: parseInt(aw.score)||0, hS: parseInt(hm.score)||0,
+              time: new Date(c.date).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true,timeZone:"America/New_York"}),
+              startEpoch, sId: String(st?.id||""), sTxt: st?.shortDetail||st?.description||"", done: st?.completed||false,
+              awH1, hmH1, awH2, hmH2, awPer, hmPer, hasLS: np >= 2,
+            };
+          }
+        } catch {}
+      }
+      return allGames;
+    }
+    function matchESPN(game, espnGames) { for (const [,eg] of Object.entries(espnGames)) { if (eg.aN.some(n=>fuzzy(game.away_team,n)) && eg.hN.some(n=>fuzzy(game.home_team,n))) return eg; } return null; }
+
+    function evalPrediction(game, espn) {
+      if (!espn || !(espn.done || espn.sId === "3")) return { spread: null, total: null };
+      const { aS, hS } = espn, sl = NUM(game.spread_line), tl = NUM(game.total_line), total = aS + hS;
+      let sp = null;
+      if (sl) { const hAway = NUM(game.spread_away_handle_pct) > NUM(game.spread_away_bets_pct); const margin = aS - hS + sl; if (margin !== 0) { const sharp = hAway ? "away" : "home"; sp = sharp === (margin > 0 ? "away" : "home") ? "hit" : "miss"; } }
+      let tp = null;
+      if (tl && total !== tl) { const hOver = NUM(game.total_over_handle_pct) > NUM(game.total_over_bets_pct); const sharp = hOver ? "over" : "under"; tp = sharp === (total > tl ? "over" : "under") ? "hit" : "miss"; }
+      return { spread: sp, total: tp };
+    }
+
+    /* -- Compute sharp lean direction for a game -- */
+    function sharpLean(game) {
+      const sl = NUM(game.spread_line);
+      const sah = NUM(game.spread_away_handle_pct), sab = NUM(game.spread_away_bets_pct);
+      const toh = NUM(game.total_over_handle_pct), tob = NUM(game.total_over_bets_pct);
+      let sprSide = null, sprLabel = "";
+      if (sah && sab) {
+        if (sah > sab) { sprSide = "away"; sprLabel = game.away_team + (sl ? ` ${sl > 0 ? "+" : ""}${sl}` : ""); }
+        else { sprSide = "home"; sprLabel = game.home_team + (sl ? ` ${sl > 0 ? String(-sl) : "+" + Math.abs(sl)}` : ""); }
+      }
+      let totSide = null, totLabel = "";
+      if (toh && tob) {
+        if (toh > tob) { totSide = "over"; totLabel = "Over " + (NUM(game.total_line) || ""); }
+        else { totSide = "under"; totLabel = "Under " + (NUM(game.total_line) || ""); }
+      }
+      return { sprSide, sprLabel, totSide, totLabel };
+    }
+
+    const mk = (id,aw,hm,sp,sF,tF,dF,src="vsin_dk",bk="draftkings") => [1,2,3,4,5,6,7,8].map(n=>({
+      timestamp:`2026-02-15T${String(7+n).padStart(2,"0")}:30:00`,source:src,book:bk,sport:sp,
+      game_id:id,game_date:"Feb 15",away_team:aw,home_team:hm,
+      spread_line:sF(n),total_line:tF(n),
+      spread_away_bets_pct:55+n*2,spread_home_bets_pct:45-n*2,
+      spread_away_handle_pct:60+n*3,spread_home_handle_pct:40-n*3,
+      total_over_bets_pct:52+n,total_under_bets_pct:48-n,
+      total_over_handle_pct:38+n*2,total_under_handle_pct:62-n*2,
+      ml_away_bets_pct:58+n,ml_home_bets_pct:42-n,ml_away_handle_pct:65+n*2,ml_home_handle_pct:35-n*2,
+      spread_bets_handle_divergence:dF(n),total_bets_handle_divergence:Math.abs(14-n*2),scrape_num:n,
+    }));
+    const SAMPLE = [
+      ...mk("wcbb_20260215_south_carolina_lsu","South Carolina","LSU","wcbb",n=>n>=5?-3:-2.5,()=>155.5,n=>Math.abs(5+n)),
+      ...mk("wcbb_20260215_south_carolina_lsu","South Carolina","LSU","wcbb",n=>n>=5?-3.5:-3,()=>156,n=>Math.abs(4+n),"vsin_circa","circa"),
+      ...mk("cbb_20260215_purdue_indiana","Purdue","Indiana","cbb",n=>-6.5-n*0.2,n=>140+n*0.5,n=>Math.abs(8-n)),
+      ...mk("nba_20260215_lakers_celtics","Lakers","Celtics","nba",()=>4.5,()=>218.5,n=>18+n*2),
+      ...mk("nba_20260215_warriors_heat","Warriors","Heat","nba",n=>-2-n*0.3,()=>225,n=>20-n),
+      ...mk("nba_20260215_bucks_nets","Bucks","Nets","nba",()=>-8.5,n=>230-n,()=>12),
+      ...mk("nhl_20260215_bruins_rangers","Bruins","Rangers","nhl",()=>-1.5,()=>6,()=>8),
+      ...mk("nhl_20260215_lightning_panthers","Lightning","Panthers","nhl",n=>1.5-n*0.1,()=>6.5,n=>15-n),
+    ];
+
+    const C = {
+      bg:"#0A0E1A", card:"#12162B", panel:"#0E1220", bdr:"#1E2438",
+      tx:"#E8EAF0", txM:"#8B92B0", txD:"#5D6481",
+      hdl:"#3B82F6", bet:"#8B5CF6", amb:"#F59E0B", ambD:"#D97706", ambB:"rgba(245,158,11,0.1)",
+      grn:"#10B981", grnD:"#059669", grnB:"rgba(16,185,129,0.1)",
+      red:"#EF4444", redD:"#DC2626", redB:"rgba(239,68,68,0.1)",
+      cyn:"#06B6D4", cynD:"#0891B2", pur:"#8B5CF6", purD:"#7C3AED", purB:"rgba(139,92,246,0.1)",
+    };
+    const MN = "ui-monospace,'Cascadia Code','SF Mono',Monaco,monospace";
+
+    /* -- SVG Charts -- */
+    function SVGAreaChart({data, width, height, dataKeyX, lines, yDomain, refLineY}) {
+      if (!data || data.length === 0) return null;
+      const pad = {top:10, right:10, bottom:28, left:38};
+      const w = width - pad.left - pad.right, h = height - pad.top - pad.bottom;
+      const yMin = yDomain ? yDomain[0] : 0, yMax = yDomain ? yDomain[1] : Math.max(...data.flatMap(d => lines.map(l => NUM(d[l.key]))), 1);
+      const xStep = data.length > 1 ? w / (data.length - 1) : w;
+      const scaleY = v => pad.top + h - ((NUM(v) - yMin) / ((yMax - yMin) || 1)) * h;
+      const scaleX = i => pad.left + i * xStep;
+      return React.createElement("svg", {width, height, style:{display:"block"}},
+        [0,0.25,0.5,0.75,1].map(f=>{var y=pad.top+h*(1-f);return React.createElement(React.Fragment,{key:f},React.createElement("line",{x1:pad.left,y1:y,x2:pad.left+w,y2:y,stroke:C.bdr,strokeDasharray:"3 3"}),React.createElement("text",{x:pad.left-4,y:y+3,fill:C.txM,fontSize:9,textAnchor:"end"},Math.round(yMin+(yMax-yMin)*f)));}),
+        refLineY!=null&&React.createElement("line",{x1:pad.left,y1:scaleY(refLineY),x2:pad.left+w,y2:scaleY(refLineY),stroke:C.txD,strokeDasharray:"4 4"}),
+        lines.map((line,li)=>{var pts=data.map((d,i)=>[scaleX(i),scaleY(d[line.key])]);var pl=pts.map((p,i)=>(i===0?"M":"L")+p[0]+","+p[1]).join(" ");var pa=pl+" L"+pts[pts.length-1][0]+","+(pad.top+h)+" L"+pts[0][0]+","+(pad.top+h)+" Z";return React.createElement(React.Fragment,{key:li},React.createElement("path",{d:pa,fill:line.color,opacity:0.15}),React.createElement("path",{d:pl,fill:"none",stroke:line.color,strokeWidth:2}),pts.map((p,i)=>React.createElement("circle",{key:i,cx:p[0],cy:p[1],r:2.5,fill:line.color})));}),
+        data.map((d,i)=>{var maxLabels=Math.floor(w/36);var step=Math.max(1,Math.ceil(data.length/maxLabels));if(i%step!==0&&i!==data.length-1)return null;return React.createElement("text",{key:i,x:scaleX(i),y:height-4,fill:C.txM,fontSize:9,textAnchor:"middle"},d[dataKeyX]);})
+      );
+    }
+    function SVGBarChart({data, width, height, bars, dataKeyX, refLineY}) {
+      if (!data||data.length===0) return null;
+      var pad={top:10,right:10,bottom:28,left:38},w=width-pad.left-pad.right,h=height-pad.top-pad.bottom;
+      var allVals=data.flatMap(d=>bars.map(b=>NUM(d[b.key]))),yMax=Math.max(...allVals,refLineY||0,1);
+      var groupW=w/data.length,barW=Math.max(4,(groupW-4)/bars.length);
+      return React.createElement("svg",{width,height,style:{display:"block"}},
+        [0,0.25,0.5,0.75,1].map(f=>{var y=pad.top+h*(1-f);return React.createElement(React.Fragment,{key:f},React.createElement("line",{x1:pad.left,y1:y,x2:pad.left+w,y2:y,stroke:C.bdr,strokeDasharray:"3 3"}),React.createElement("text",{x:pad.left-4,y:y+3,fill:C.txM,fontSize:9,textAnchor:"end"},Math.round(yMax*f)));}),
+        refLineY!=null&&React.createElement("line",{x1:pad.left,y1:pad.top+h-(refLineY/yMax)*h,x2:pad.left+w,y2:pad.top+h-(refLineY/yMax)*h,stroke:C.amb,strokeDasharray:"4 4"}),
+        data.map((d,di)=>{var gx=pad.left+di*groupW+2;var maxLabels=Math.floor(w/36);var step=Math.max(1,Math.ceil(data.length/maxLabels));return React.createElement(React.Fragment,{key:di},bars.map((b,bi)=>{var val=NUM(d[b.key]),bh=(val/yMax)*h,color=b.colorFn?b.colorFn(d,val):b.color;return React.createElement("rect",{key:bi,x:gx+bi*barW,y:pad.top+h-bh,width:barW-1,height:bh,fill:color,rx:2});}),(di%step===0||di===data.length-1)?React.createElement("text",{key:"l",x:gx+(bars.length*barW)/2,y:height-4,fill:C.txM,fontSize:9,textAnchor:"middle"},d[dataKeyX]):null);})
+      );
+    }
+    function useContainerWidth(ref){var[w,setW]=useState(500);useEffect(()=>{if(!ref.current)return;var ro=new ResizeObserver(e=>{for(var i=0;i<e.length;i++)setW(e[i].contentRect.width);});ro.observe(ref.current);setW(ref.current.offsetWidth);return()=>ro.disconnect();},[ref]);return w;}
+
+    /* -- UI Components -- */
+    function LinePill({v,l,moved,prev}){return(<div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:C.card,borderRadius:6,border:`1px solid ${moved?C.amb:C.bdr}`}}><span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>{l}</span><span style={{fontSize:18,fontWeight:700,fontFamily:MN,color:moved?C.amb:C.tx}}>{v||"\u2014"}</span>{moved&&prev!=null&&<span style={{fontSize:10,color:C.txM,fontFamily:MN}}>({prev>v?"\u25BC":"\u25B2"}{Math.abs(prev-v).toFixed(1)})</span>}</div>);}
+    function StatusBadge({e}){const done=e.done||e.sId==="3",live=e.sId==="2";const bg=done?C.txD:live?C.grn:"transparent",txt=done?C.bg:live?C.bg:C.txM,bdr=done||live?bg:C.bdr;return(<span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:1.2,color:txt,background:bg,border:`1px solid ${bdr}`,padding:"2px 6px",borderRadius:3}}>{done?"Final":live?"Live":"Scheduled"}</span>);}
+
+    function ScoreBlock({e,spr,tot,aw,hm,game}){
+      if(!e||!(e.done||e.sId==="3"||e.sId==="2"))return null;
+      const done=e.done||e.sId==="3",sl=NUM(spr),tl=NUM(tot);
+      const hAway=NUM(game.spread_away_handle_pct)>NUM(game.spread_away_bets_pct),awW=hAway?1:0.5,hmW=hAway?0.5:1;
+      const spreadMargin=sl?(e.aS-e.hS+sl):null;
+      let awSC=C.tx,hmSC=C.tx;
+      if(done&&spreadMargin!=null){awSC=spreadMargin>0?C.grn:spreadMargin<0?C.red:C.tx;hmSC=spreadMargin<0?C.grn:spreadMargin>0?C.red:C.tx;}
+      const totalSum=e.aS+e.hS,totalStatus=tl?(totalSum>tl?"Over":totalSum<tl?"Under":"Push"):null;
+      const hOver=NUM(game.total_over_handle_pct)>NUM(game.total_over_bets_pct);
+      const totalMatch=done&&tl?((hOver&&totalSum>tl)||(!hOver&&totalSum<tl)):null;
+      const totC=done&&tl?(totalMatch?C.grn:totalSum===tl?C.tx:C.red):C.tx;
+      return(<div style={{padding:"14px 18px",background:C.card,borderRadius:8,border:`1px solid ${C.bdr}`,marginTop:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:e.hasLS?10:0}}><div style={{flex:1}}><div style={{fontSize:12,color:C.txM,marginBottom:4}}>{aw}</div><div style={{fontSize:28,fontWeight:700,fontFamily:MN,color:awSC,opacity:awW}}>{e.aS}</div>{e.hasLS&&<div style={{fontSize:11,color:C.txM,fontFamily:MN,marginTop:2}}>H1:{e.awH1} H2:{e.awH2}</div>}</div><div style={{fontSize:11,color:C.txM,textAlign:"center"}}>vs</div><div style={{flex:1,textAlign:"right"}}><div style={{fontSize:12,color:C.txM,marginBottom:4}}>{hm}</div><div style={{fontSize:28,fontWeight:700,fontFamily:MN,color:hmSC,opacity:hmW}}>{e.hS}</div>{e.hasLS&&<div style={{fontSize:11,color:C.txM,fontFamily:MN,marginTop:2}}>H1:{e.hmH1} H2:{e.hmH2}</div>}</div></div>{done&&sl&&spreadMargin!=null&&<div style={{marginTop:8,padding:"6px 10px",background:awSC===C.grn||hmSC===C.grn?C.grnB:awSC===C.red||hmSC===C.red?C.redB:"transparent",borderRadius:4,fontSize:10,color:awSC===C.grn||hmSC===C.grn?C.grn:awSC===C.red||hmSC===C.red?C.red:C.tx,fontWeight:600}}>Spread ({sl>0?"+":""}{sl}): {spreadMargin>0?`${aw} covers`:`${hm} covers`}</div>}{done&&tl&&<div style={{marginTop:6,padding:"6px 10px",background:totC===C.grn?C.grnB:totC===C.red?C.redB:"transparent",borderRadius:4,fontSize:10,color:totC,fontWeight:600}}>Total ({tl}): {totalStatus} {totalSum!==tl&&totalMatch!=null?totalMatch?"\u2714":"\u2718":""}</div>}</div>);
+    }
+    function MoveChart({history,metric,containerWidth}){const data=history.map(r=>{const t=r.timestamp?.split("T")[1]?.slice(0,5)||`#${r.scrape_num}`;return{time:t,awH:NUM(r[`${metric}_away_handle_pct`])||NUM(r[`${metric}_over_handle_pct`]),awB:NUM(r[`${metric}_away_bets_pct`])};});return(<div><div style={{marginBottom:8}}><span style={{fontSize:11,fontWeight:700,color:C.txD,textTransform:"uppercase",letterSpacing:1.5}}>{metric==="ml"?"Moneyline":metric==="total"?"Total (Over/Under)":"Spread"} Movement</span></div><SVGAreaChart data={data} width={containerWidth} height={280} dataKeyX="time" yDomain={[0,100]} refLineY={50} lines={[{key:"awH",color:C.hdl},{key:"awB",color:C.bet}]}/></div>);}
+    function DivergenceChart({history,containerWidth}){const data=history.map(r=>({time:r.timestamp?.split("T")[1]?.slice(0,5)||`#${r.scrape_num}`,spread:NUM(r.spread_bets_handle_divergence),total:NUM(r.total_bets_handle_divergence)}));return(<div><div style={{marginBottom:8}}><span style={{fontSize:11,fontWeight:700,color:C.txD,textTransform:"uppercase",letterSpacing:1.5}}>Divergence Over Time</span></div><SVGBarChart data={data} width={containerWidth} height={210} dataKeyX="time" refLineY={15} bars={[{key:"spread",color:C.cyn,colorFn:(d,v)=>v>=15?C.amb:C.cyn},{key:"total",color:C.pur,colorFn:(d,v)=>v>=15?C.amb:C.pur}]}/></div>);}
+    function SourceCompare({gameId,allData}){
+      const rows=allData.filter(r=>r.game_id===gameId);
+      const bySrc=rows.reduce((a,r)=>{const k=r.source;if(!a[k])a[k]=[];a[k].push(r);return a;},{});
+      const srcs=Object.keys(bySrc);
+      if(srcs.length<2)return null;
+      const last={};srcs.forEach(s=>{const h=bySrc[s].sort((a,b)=>(a.scrape_num||0)-(b.scrape_num||0));last[s]=h[h.length-1];});
+      function PctBar({val,color}){return(<div style={{marginTop:4,height:3,background:C.bdr,borderRadius:2,overflow:"hidden"}}><div style={{width:`${Math.min(100,val)}%`,height:"100%",background:color,borderRadius:2}}/></div>);}
+      function BigPct({val,label,color,highlight}){return(<div style={{textAlign:"center",minWidth:52}}><div style={{fontSize:9,color:color,textTransform:"uppercase",letterSpacing:1,fontWeight:700,marginBottom:1}}>{label}</div><div style={{fontSize:22,fontWeight:800,fontFamily:MN,lineHeight:1,color:highlight?C.amb:C.tx}}>{val.toFixed(1)}<span style={{fontSize:12,fontWeight:600,color:highlight?C.amb:color}}>%</span></div><PctBar val={val} color={highlight?C.amb:color}/></div>);}
+      return(<div style={{marginTop:16,padding:"14px 16px",background:C.card,borderRadius:8,border:`1px solid ${C.bdr}`}}>
+        <div style={{fontSize:11,fontWeight:700,color:C.txD,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12}}>Source Comparison</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {srcs.map(s=>{
+            const r=last[s];
+            const sah=NUM(r.spread_away_handle_pct),shh=NUM(r.spread_home_handle_pct),sab=NUM(r.spread_away_bets_pct),shb=NUM(r.spread_home_bets_pct);
+            const toh=NUM(r.total_over_handle_pct),tuh=NUM(r.total_under_handle_pct),tob=NUM(r.total_over_bets_pct),tub=NUM(r.total_under_bets_pct);
+            const sdiv=NUM(r.spread_bets_handle_divergence),tdiv=NUM(r.total_bets_handle_divergence);
+            return(<div key={s} style={{padding:"10px 12px",background:C.bg,borderRadius:6,border:`1px solid ${C.bdr}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                <span style={{fontSize:11,fontWeight:700,color:C.tx}}>{s}</span>
+                <span style={{fontSize:10,fontFamily:MN,color:C.cyn,fontWeight:600}}>Spr {r.spread_line||"—"}</span>
+                <span style={{fontSize:10,fontFamily:MN,color:C.pur,fontWeight:600}}>O/U {r.total_line||"—"}</span>
+              </div>
+              <div style={{display:"flex",gap:0,alignItems:"stretch"}}>
+                {/* SPREAD SECTION */}
+                <div style={{flex:1,paddingRight:14,borderRight:`1px solid ${C.bdr}`}}>
+                  <div style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700,marginBottom:8}}>Spread</div>
+                  <div style={{display:"flex",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
+                    <div style={{flex:1,minWidth:100}}>
+                      <div style={{fontSize:8,color:C.txD,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Away Handle / Bets</div>
+                      <div style={{display:"flex",gap:6,alignItems:"baseline"}}>
+                        <span style={{fontSize:18,fontWeight:800,fontFamily:MN,color:C.hdl,lineHeight:1}}>{sah.toFixed(1)}<span style={{fontSize:10}}>%</span></span>
+                        <span style={{fontSize:11,color:C.txM}}>/</span>
+                        <span style={{fontSize:18,fontWeight:800,fontFamily:MN,color:C.bet,lineHeight:1}}>{sab.toFixed(1)}<span style={{fontSize:10}}>%</span></span>
+                      </div>
+                      <div style={{marginTop:3,height:3,background:C.bdr,borderRadius:2,overflow:"hidden",position:"relative"}}>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${sah}%`,background:C.hdl,borderRadius:2,opacity:0.7}}/>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${sab}%`,background:C.bet,borderRadius:2,opacity:0.5}}/>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+                        <span style={{fontSize:8,color:C.txD}}>Home Hdl: {shh.toFixed(1)}%</span>
+                        <span style={{fontSize:8,color:C.txD}}>Home Bets: {shb.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div style={{flexShrink:0,padding:"6px 10px",background:sdiv>=15?C.ambB:C.card,borderRadius:5,border:`1px solid ${sdiv>=15?C.ambD:C.bdr}`,textAlign:"center",minWidth:58}}>
+                      <div style={{fontSize:8,color:C.cyn,textTransform:"uppercase",letterSpacing:1,fontWeight:700}}>Spr Div</div>
+                      <div style={{fontSize:24,fontWeight:800,fontFamily:MN,lineHeight:1.1,color:sdiv>=15?C.amb:C.tx,marginTop:2}}>{sdiv.toFixed(1)}<span style={{fontSize:13,fontWeight:600}}>%</span></div>
+                    </div>
+                  </div>
+                </div>
+                {/* TOTAL SECTION */}
+                <div style={{flex:1,paddingLeft:14}}>
+                  <div style={{fontSize:9,color:C.pur,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700,marginBottom:8}}>Total</div>
+                  <div style={{display:"flex",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
+                    <div style={{flex:1,minWidth:100}}>
+                      <div style={{fontSize:8,color:C.txD,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Over Handle / Bets</div>
+                      <div style={{display:"flex",gap:6,alignItems:"baseline"}}>
+                        <span style={{fontSize:18,fontWeight:800,fontFamily:MN,color:C.hdl,lineHeight:1}}>{toh.toFixed(1)}<span style={{fontSize:10}}>%</span></span>
+                        <span style={{fontSize:11,color:C.txM}}>/</span>
+                        <span style={{fontSize:18,fontWeight:800,fontFamily:MN,color:C.bet,lineHeight:1}}>{tob.toFixed(1)}<span style={{fontSize:10}}>%</span></span>
+                      </div>
+                      <div style={{marginTop:3,height:3,background:C.bdr,borderRadius:2,overflow:"hidden",position:"relative"}}>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${toh}%`,background:C.hdl,borderRadius:2,opacity:0.7}}/>
+                        <div style={{position:"absolute",left:0,top:0,height:"100%",width:`${tob}%`,background:C.bet,borderRadius:2,opacity:0.5}}/>
+                      </div>
+                      <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+                        <span style={{fontSize:8,color:C.txD}}>Under Hdl: {tuh.toFixed(1)}%</span>
+                        <span style={{fontSize:8,color:C.txD}}>Under Bets: {tub.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div style={{flexShrink:0,padding:"6px 10px",background:tdiv>=15?C.ambB:C.card,borderRadius:5,border:`1px solid ${tdiv>=15?C.ambD:C.bdr}`,textAlign:"center",minWidth:58}}>
+                      <div style={{fontSize:8,color:C.pur,textTransform:"uppercase",letterSpacing:1,fontWeight:700}}>O/U Div</div>
+                      <div style={{fontSize:24,fontWeight:800,fontFamily:MN,lineHeight:1.1,color:tdiv>=15?C.amb:C.tx,marginTop:2}}>{tdiv.toFixed(1)}<span style={{fontSize:13,fontWeight:600}}>%</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>);
+          })}
+        </div>
+      </div>);
+    }
+
+    /* ========== UPDATED GameRow with lean indicators ========== */
+    function GameRow({game,espn,sel,onClick,maxDiv,first}){
+      const sd=NUM(game.spread_bets_handle_divergence),td=NUM(game.total_bets_handle_divergence),div=Math.max(sd,td);
+      const sm=first&&NUM(game.spread_line)!==NUM(first.spread_line),tm=first&&NUM(game.total_line)!==NUM(first.total_line),moved=sm||tm;
+      const pct=maxDiv>0?(div/maxDiv)*100:0;
+      const lean=sharpLean(game);
+      const s={padding:"12px 16px",borderBottom:`1px solid ${C.bdr}`,cursor:"pointer",background:sel?C.panel:C.bg,position:"relative",overflow:"hidden",transition:"background 0.15s"};
+      return(<div style={s} onClick={onClick} onMouseEnter={e=>e.currentTarget.style.background=sel?C.panel:C.card} onMouseLeave={e=>e.currentTarget.style.background=sel?C.panel:C.bg}>
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${pct}%`,background:`linear-gradient(90deg, ${C.ambB} 0%, transparent 100%)`,pointerEvents:"none"}}/>
+        <div style={{position:"relative"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:600,color:C.tx}}>{game.away_team} <span style={{color:C.txM,fontWeight:400}}>@</span> {game.home_team}</div>
+              <div style={{display:"flex",gap:8,marginTop:3,fontSize:10,color:C.txD,flexWrap:"wrap",alignItems:"center"}}><span>{friendlyDate(getGameDate(game))}</span>{espn&&espn.time&&<span style={{color:C.cyn,fontWeight:600}}>{espn.time}</span>}<span>{game.sport.toUpperCase()}</span><span>{game.source}</span>
+                {sm&&<span style={{display:"inline-flex",alignItems:"center",gap:3,color:C.amb,fontWeight:700,fontSize:9,background:C.ambB,border:`1px solid ${C.ambD}`,borderRadius:3,padding:"1px 6px"}}>
+                  <span style={{fontSize:8,color:C.txM,fontWeight:600}}>SPR</span>
+                  <span style={{fontFamily:MN}}>{NUM(first.spread_line)>NUM(game.spread_line)?"\u25BC":"\u25B2"}</span>
+                  <span style={{fontFamily:MN}}>{first.spread_line}</span>
+                  <span style={{color:C.txM}}>\u2192</span>
+                  <span style={{fontFamily:MN}}>{game.spread_line}</span>
+                </span>}
+                {tm&&<span style={{display:"inline-flex",alignItems:"center",gap:3,color:C.amb,fontWeight:700,fontSize:9,background:C.ambB,border:`1px solid ${C.ambD}`,borderRadius:3,padding:"1px 6px"}}>
+                  <span style={{fontSize:8,color:C.txM,fontWeight:600}}>O/U</span>
+                  <span style={{fontFamily:MN}}>{NUM(first.total_line)>NUM(game.total_line)?"\u25BC":"\u25B2"}</span>
+                  <span style={{fontFamily:MN}}>{first.total_line}</span>
+                  <span style={{color:C.txM}}>\u2192</span>
+                  <span style={{fontFamily:MN}}>{game.total_line}</span>
+                </span>}
+                {espn&&<StatusBadge e={espn}/>}
+              </div>
+            </div>
+          </div>
+          {/* NEW: Sharp lean pills */}
+          <div style={{display:"flex",gap:5,marginBottom:6,flexWrap:"wrap"}}>
+            {sd>=5&&lean.sprLabel&&<div style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",background:sd>=15?C.ambB:C.card,border:`1px solid ${sd>=15?C.ambD:C.bdr}`,borderRadius:4}}>
+              <span style={{fontSize:8,fontWeight:700,color:C.cyn,letterSpacing:1}}>SPR</span>
+              <span style={{fontSize:9,color:sd>=15?C.amb:C.cyn}}>{"\u2192"}</span>
+              <span style={{fontSize:10,fontWeight:700,fontFamily:MN,color:sd>=15?C.amb:C.tx}}>{lean.sprLabel}</span>
+              <span style={{fontSize:9,fontWeight:600,fontFamily:MN,color:sd>=15?C.amb:C.txM}}>{sd.toFixed(0)}%</span>
+            </div>}
+            {td>=5&&lean.totLabel&&<div style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",background:td>=15?C.ambB:C.card,border:`1px solid ${td>=15?C.ambD:C.bdr}`,borderRadius:4}}>
+              <span style={{fontSize:8,fontWeight:700,color:C.pur,letterSpacing:1}}>O/U</span>
+              <span style={{fontSize:9,color:td>=15?C.amb:C.pur}}>{"\u2192"}</span>
+              <span style={{fontSize:10,fontWeight:700,fontFamily:MN,color:td>=15?C.amb:C.tx}}>{lean.totLabel}</span>
+              <span style={{fontSize:9,fontWeight:600,fontFamily:MN,color:td>=15?C.amb:C.txM}}>{td.toFixed(0)}%</span>
+            </div>}
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <div style={{flex:1,padding:"5px 10px",background:C.card,borderRadius:4,border:`1px solid ${sm?C.amb:C.bdr}`}}><div style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1}}>Spread</div><div style={{fontSize:14,fontWeight:700,fontFamily:MN,marginTop:1,color:sm?C.amb:C.tx}}>{game.spread_line||"\u2014"}</div></div>
+            <div style={{flex:1,padding:"5px 10px",background:C.card,borderRadius:4,border:`1px solid ${tm?C.amb:C.bdr}`}}><div style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1}}>Total</div><div style={{fontSize:14,fontWeight:700,fontFamily:MN,marginTop:1,color:tm?C.amb:C.tx}}>{game.total_line||"\u2014"}</div></div>
+            <div style={{flex:"0 0 72px",padding:"5px 10px",background:sd>=15?C.ambB:C.card,borderRadius:4,border:`1px solid ${sd>=15?C.ambD:sd>=td?C.cyn+"55":C.bdr}`,textAlign:"center"}}><div style={{fontSize:8,color:sd>=td?C.cyn:C.txM,textTransform:"uppercase",letterSpacing:1}}>Spr Div</div><div style={{fontSize:20,fontWeight:800,fontFamily:MN,marginTop:0,lineHeight:1.1,color:sd>=15?C.amb:sd>=td?C.cyn:C.tx}}>{sd.toFixed(1)}<span style={{fontSize:11,fontWeight:600}}>%</span></div></div>
+            <div style={{flex:"0 0 72px",padding:"5px 10px",background:td>=15?C.ambB:C.card,borderRadius:4,border:`1px solid ${td>=15?C.ambD:td>sd?C.pur+"55":C.bdr}`,textAlign:"center"}}><div style={{fontSize:8,color:td>sd?C.pur:C.txM,textTransform:"uppercase",letterSpacing:1}}>O/U Div</div><div style={{fontSize:20,fontWeight:800,fontFamily:MN,marginTop:0,lineHeight:1.1,color:td>=15?C.amb:td>sd?C.pur:C.tx}}>{td.toFixed(1)}<span style={{fontSize:11,fontWeight:600}}>%</span></div></div>
+          </div>
+        </div>
+      </div>);
+    }
+
+    /* ========== NEW: Summary Dashboard ========== */
+    function SummaryTab({data,games,getESPN,latestByGameSrc}){
+      const [sMin,setSMin]=useState(10),[tMin,setTMin]=useState(10);
+      const btn=sel=>({padding:"4px 10px",fontSize:10,fontWeight:600,background:sel?C.cyn:"transparent",color:sel?C.bg:C.txM,border:`1px solid ${sel?C.cyn:C.bdr}`,borderRadius:4,cursor:"pointer"});
+      const results=useMemo(()=>{
+        const out={sprHit:0,sprMiss:0,totHit:0,totMiss:0,sprGames:[],totGames:[]};
+        Object.values(latestByGameSrc).forEach(g=>{
+          if(g.source!=="vsin_dk")return;
+          const espn=getESPN(g);if(!espn||!(espn.done||espn.sId==="3"))return;
+          const sd=NUM(g.spread_bets_handle_divergence),td=NUM(g.total_bets_handle_divergence);
+          const pred=evalPrediction(g,espn),lean=sharpLean(g);
+          if(sd>=sMin&&pred.spread){
+            if(pred.spread==="hit")out.sprHit++;else out.sprMiss++;
+            out.sprGames.push({g,espn,pred,lean,sd});
+          }
+          if(td>=tMin&&pred.total){
+            if(pred.total==="hit")out.totHit++;else out.totMiss++;
+            out.totGames.push({g,espn,pred,lean,td});
+          }
+        });
+        return out;
+      },[latestByGameSrc,getESPN,sMin,tMin]);
+      const sprT=results.sprHit+results.sprMiss,totT=results.totHit+results.totMiss;
+      const sprP=sprT?((results.sprHit/sprT)*100).toFixed(1):"--",totP=totT?((results.totHit/totT)*100).toFixed(1):"--";
+      const allH=results.sprHit+results.totHit,allT=sprT+totT,allP=allT?((allH/allT)*100).toFixed(1):"--";
+
+      function ResultRow({item,type}){
+        const isHit=type==="spread"?item.pred.spread==="hit":item.pred.total==="hit";
+        const divVal=type==="spread"?item.sd:item.td;
+        const lbl=type==="spread"?item.lean.sprLabel:item.lean.totLabel;
+        const line=type==="spread"?item.g.spread_line:item.g.total_line;
+        const scoreStr=`${item.espn.aS} - ${item.espn.hS}`;
+        const total=item.espn.aS+item.espn.hS;
+        const accentClr=isHit?C.grn:C.red;
+        const outcomeStr=type==="spread"
+          ?(isHit?`${lbl} covered`:`${lbl} did not cover`)
+          :(isHit?`${lbl} (${total})`:`${lbl} missed (${total})`);
+        return(
+          <div style={{display:"flex",alignItems:"stretch",marginBottom:4,borderRadius:6,overflow:"hidden",border:`1px solid ${accentClr}33`}}>
+            <div style={{width:4,background:accentClr,flexShrink:0}}/>
+            <div style={{flex:1,display:"flex",alignItems:"center",gap:10,padding:"8px 10px",background:isHit?C.grnB:C.redB}}>
+              <div style={{width:22,height:22,borderRadius:11,background:accentClr,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <span style={{fontSize:12,color:C.bg,fontWeight:800}}>{isHit?"\u2714":"\u2718"}</span>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:11,fontWeight:700,color:C.tx,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.g.away_team} @ {item.g.home_team}</div>
+                <div style={{display:"flex",gap:5,marginTop:3,alignItems:"center",flexWrap:"wrap"}}>
+                  <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,color:type==="spread"?C.cyn:C.pur}}>{type==="spread"?"Sharp SPR":"Sharp O/U"}</span>
+                  <span style={{fontSize:9,color:C.txM}}>{"→"}</span>
+                  <span style={{fontSize:10,fontWeight:700,fontFamily:MN,color:C.tx}}>{lbl}</span>
+                  <span style={{fontSize:9,color:C.txD,fontFamily:MN}}>(line {line})</span>
+                </div>
+                <div style={{marginTop:2,fontSize:9,fontWeight:600,color:accentClr}}>{outcomeStr}</div>
+              </div>
+              <div style={{textAlign:"right",flexShrink:0}}>
+                <div style={{fontSize:14,fontWeight:800,fontFamily:MN,color:C.tx}}>{scoreStr}</div>
+                {type==="total"&&<div style={{fontSize:9,color:C.txM,fontFamily:MN}}>Total: {total}</div>}
+                <div style={{fontSize:10,fontWeight:700,fontFamily:MN,color:accentClr,marginTop:2}}>{divVal.toFixed(0)}<span style={{fontSize:8}}> div%</span></div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return(<div style={{padding:24,overflowY:"auto",height:"100%"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
+          <h2 style={{margin:0,fontSize:20,fontWeight:700}}>Sharp Signal Summary</h2>
+          <span style={{fontSize:9,fontWeight:700,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5,padding:"3px 8px",background:C.cyn+"18",border:`1px solid ${C.cyn}44`,borderRadius:4}}>vsin_dk only</span>
+        </div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginBottom:20}}>
+          <span style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5}}>Spr Min Div</span>
+          {[0,5,10,15,20,25,30,35,40].map(v=><button key={v} style={btn(sMin===v)} onClick={()=>setSMin(v)}>{v}%</button>)}
+          <div style={{width:1,height:16,background:C.bdr,margin:"0 4px"}}/>
+          <span style={{fontSize:9,color:C.pur,textTransform:"uppercase",letterSpacing:1.5}}>O/U Min Div</span>
+          {[0,5,10,15,20,25,30,35,40].map(v=><button key={v} style={btn(tMin===v)} onClick={()=>setTMin(v)}>{v}%</button>)}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:24}}>
+          <div style={{padding:"16px 20px",background:C.card,borderRadius:8,border:`1px solid ${C.cyn}44`}}>
+            <div style={{fontSize:9,fontWeight:700,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}}>Spread ({sMin}%+)</div>
+            <div style={{fontSize:32,fontWeight:700,fontFamily:MN,color:C.tx}}>{results.sprHit}-{results.sprMiss}</div>
+            <div style={{fontSize:11,color:C.txM,marginTop:4}}>{sprP}% hit · {sprT} games</div>
+            <div style={{marginTop:8,height:6,background:C.bdr,borderRadius:3,overflow:"hidden"}}>{sprT>0&&<div style={{width:`${(results.sprHit/sprT)*100}%`,height:"100%",background:`linear-gradient(90deg,${C.grn},${C.cyn})`,borderRadius:3}}/>}</div>
+          </div>
+          <div style={{padding:"16px 20px",background:C.card,borderRadius:8,border:`1px solid ${C.pur}44`}}>
+            <div style={{fontSize:9,fontWeight:700,color:C.pur,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}}>Total ({tMin}%+)</div>
+            <div style={{fontSize:32,fontWeight:700,fontFamily:MN,color:C.tx}}>{results.totHit}-{results.totMiss}</div>
+            <div style={{fontSize:11,color:C.txM,marginTop:4}}>{totP}% hit · {totT} games</div>
+            <div style={{marginTop:8,height:6,background:C.bdr,borderRadius:3,overflow:"hidden"}}>{totT>0&&<div style={{width:`${(results.totHit/totT)*100}%`,height:"100%",background:`linear-gradient(90deg,${C.pur},${C.hdl})`,borderRadius:3}}/>}</div>
+          </div>
+          <div style={{padding:"16px 20px",background:C.card,borderRadius:8,border:`1px solid ${C.amb}44`}}>
+            <div style={{fontSize:9,fontWeight:700,color:C.amb,textTransform:"uppercase",letterSpacing:1.5,marginBottom:6}}>Combined</div>
+            <div style={{fontSize:32,fontWeight:700,fontFamily:MN,color:C.tx}}>{allH}-{allT-allH}</div>
+            <div style={{fontSize:11,color:C.txM,marginTop:4}}>{allP}% hit · {allT} games</div>
+            <div style={{marginTop:8,height:6,background:C.bdr,borderRadius:3,overflow:"hidden"}}>{allT>0&&<div style={{width:`${(allH/allT)*100}%`,height:"100%",background:`linear-gradient(90deg,${C.amb},${C.ambD})`,borderRadius:3}}/>}</div>
+          </div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Spread Results ({results.sprGames.length})</div>
+            {results.sprGames.length===0?<div style={{padding:20,textAlign:"center",color:C.txM,fontSize:11}}>No completed spread signals at {sMin}%+ div</div>:results.sprGames.map((it,i)=><ResultRow key={i} item={it} type="spread"/>)}
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:C.pur,textTransform:"uppercase",letterSpacing:1.5,marginBottom:8}}>Total Results ({results.totGames.length})</div>
+            {results.totGames.length===0?<div style={{padding:20,textAlign:"center",color:C.txM,fontSize:11}}>No completed total signals at {tMin}%+ div</div>:results.totGames.map((it,i)=><ResultRow key={i} item={it} type="total"/>)}
+          </div>
+        </div>
+      </div>);
+    }
+
+    /* ========== Main Dashboard ========== */
+    function Dashboard(){
+      const [data,setData]=useState(SAMPLE);
+      const [sportFilter,setSportFilter]=useState("all");
+      const [sourceFilter,setSourceFilter]=useState("vsin_dk");
+      const [dateFilter,setDateFilter]=useState("all");
+      const [sortBy,setSortBy]=useState("max_div");
+      const [minSpreadDiv,setMinSpreadDiv]=useState(0);
+      const [minTotalDiv,setMinTotalDiv]=useState(0);
+      const [selectedId,setSelectedId]=useState(null);
+      const [metric,setMetric]=useState("spread");
+      const [espnCache,setEspnCache]=useState({});
+      const [tab,setTab]=useState("games");
+
+      const selectGame=useCallback(id=>setSelectedId(id),[]);
+      const detailRef=useRef(null);
+      const detailWidth=useContainerWidth(detailRef);
+
+      useEffect(()=>{
+        const dates=new Set(data.map(r=>getGameDate(r)));
+        const sports=new Set(data.map(r=>SPORT_ALIASES[r.sport]||r.sport));
+        const jobs=[];
+        dates.forEach(dt=>{sports.forEach(sp=>{const k=`${sp}_${dt}`;if(!espnCache[k])jobs.push({sport:sp,date:dt,key:k});});});
+        if(jobs.length===0)return;
+        Promise.all(jobs.map(async({sport,date,key})=>{const g=await fetchESPN(sport,date);return{key,games:g};})).then(res=>{const upd={...espnCache};res.forEach(({key,games})=>upd[key]=games);setEspnCache(upd);});
+      },[data]);
+
+      const getESPN=useCallback(game=>{const dt=getGameDate(game),resolved=SPORT_ALIASES[game.sport]||game.sport,k=`${resolved}_${dt}`,eg=espnCache[k];return eg?matchESPN(game,eg):null;},[espnCache]);
+      const latestByGameSrc=useMemo(()=>{const m={};data.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||r.scrape_num>m[k].scrape_num)m[k]=r;});return m;},[data]);
+      const firstByGame=useMemo(()=>{const m={};data.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||r.scrape_num<m[k].scrape_num)m[k]=r;});return m;},[data]);
+      const games=useMemo(()=>Object.values(latestByGameSrc),[latestByGameSrc]);
+      const todayStr=useMemo(()=>fmtDate(new Date()),[]);
+      const tmrwStr=useMemo(()=>{const t=new Date();t.setDate(t.getDate()+1);return fmtDate(t);},[]);
+      const availDates=useMemo(()=>[...new Set(games.map(g=>getGameDate(g)))].sort(),[games]);
+
+      const filtered=useMemo(()=>{
+        let f=games;
+        if(dateFilter==="today")f=f.filter(g=>getGameDate(g)===todayStr);
+        else if(dateFilter==="tomorrow")f=f.filter(g=>getGameDate(g)===tmrwStr);
+        if(sportFilter!=="all")f=f.filter(g=>g.sport===sportFilter);
+        if(sourceFilter!=="all")f=f.filter(g=>g.source===sourceFilter);
+        if(minSpreadDiv>0||minTotalDiv>0){f=f.filter(g=>{const sd=NUM(g.spread_bets_handle_divergence),td=NUM(g.total_bets_handle_divergence);if(minSpreadDiv>0&&minTotalDiv>0)return sd>=minSpreadDiv||td>=minTotalDiv;if(minSpreadDiv>0)return sd>=minSpreadDiv;if(minTotalDiv>0)return td>=minTotalDiv;return true;});}
+        return f;
+      },[games,dateFilter,todayStr,tmrwStr,sportFilter,sourceFilter,minSpreadDiv,minTotalDiv]);
+
+      const maxDiv=useMemo(()=>{let m=0;filtered.forEach(g=>m=Math.max(m,NUM(g.spread_bets_handle_divergence),NUM(g.total_bets_handle_divergence)));return m;},[filtered]);
+      const ranked=useMemo(()=>{
+        const arr=[...filtered];
+        if(sortBy==="max_div")arr.sort((a,b)=>Math.max(NUM(b.spread_bets_handle_divergence),NUM(b.total_bets_handle_divergence))-Math.max(NUM(a.spread_bets_handle_divergence),NUM(a.total_bets_handle_divergence)));
+        else if(sortBy==="spread_div")arr.sort((a,b)=>NUM(b.spread_bets_handle_divergence)-NUM(a.spread_bets_handle_divergence));
+        else if(sortBy==="total_div")arr.sort((a,b)=>NUM(b.total_bets_handle_divergence)-NUM(a.total_bets_handle_divergence));
+        else if(sortBy==="time")arr.sort((a,b)=>{const ea=getESPN(a),eb=getESPN(b);return(ea?.startEpoch||0)-(eb?.startEpoch||0);});
+        else if(sortBy==="time_desc")arr.sort((a,b)=>{const ea=getESPN(a),eb=getESPN(b);return(eb?.startEpoch||0)-(ea?.startEpoch||0);});
+        return arr;
+      },[filtered,sortBy,getESPN]);
+
+      const sports=useMemo(()=>[...new Set(games.map(g=>g.sport))].sort(),[games]);
+      const sources=useMemo(()=>[...new Set(games.map(g=>g.source))].sort(),[games]);
+      const selectedGame=useMemo(()=>selectedId?latestByGameSrc[selectedId]:null,[selectedId,latestByGameSrc]);
+
+      useEffect(()=>{if(!selectedGame)return;const sd=NUM(selectedGame.spread_bets_handle_divergence),td=NUM(selectedGame.total_bets_handle_divergence);setMetric(td>sd?"total":"spread");},[selectedId]);
+
+      const selectedHistory=useMemo(()=>{if(!selectedId)return[];const[gid,src]=selectedId.split("__");return data.filter(r=>r.game_id===gid&&r.source===src).sort((a,b)=>(a.scrape_num||0)-(b.scrape_num||0));},[selectedId,data]);
+      const selSrcCount=useMemo(()=>{if(!selectedGame)return 0;return new Set(data.filter(r=>r.game_id===selectedGame.game_id).map(r=>r.source)).size;},[selectedGame,data]);
+
+      const [uploadMode,setUploadMode]=useState("merge");
+      const [uploadMsg,setUploadMsg]=useState(null);
+
+      const handleFile=useCallback(e=>{const f=e.target.files?.[0];if(!f)return;e.target.value="";window.Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>{if(!r.data||r.data.length===0)return;if(uploadMode==="replace"){setData(r.data);setUploadMsg(`Loaded ${r.data.length} rows`);}else{setData(prev=>{const key=row=>`${row.game_id}||${row.source}||${row.timestamp}`;const existing=new Set(prev.map(key));const newRows=r.data.filter(row=>!existing.has(key(row)));const merged=[...prev,...newRows];setUploadMsg(`Merged +${newRows.length} new rows (${merged.length} total)`);return merged;});}setTimeout(()=>setUploadMsg(null),4000);}});},[uploadMode]);
+
+      const btn=sel=>({padding:"4px 10px",fontSize:10,fontWeight:600,background:sel?C.cyn:"transparent",color:sel?C.bg:C.txM,border:`1px solid ${sel?C.cyn:C.bdr}`,borderRadius:4,cursor:"pointer",transition:"all 0.15s"});
+      const tabBtn=(sel,clr)=>({padding:"6px 16px",fontSize:11,fontWeight:700,background:sel?(clr||C.cyn):"transparent",color:sel?C.bg:C.txM,border:`1px solid ${sel?(clr||C.cyn):C.bdr}`,borderRadius:6,cursor:"pointer",letterSpacing:0.5});
+      const chartW=Math.max(300,detailWidth-48);
+
+      return(
+        <div style={{width:"100vw",height:"100vh",background:C.bg,color:C.tx,display:"flex",flexDirection:"column",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"}}>
+          <div style={{padding:"14px 20px",borderBottom:`2px solid ${C.bdr}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:16}}>
+              <h1 style={{margin:0,fontSize:18,fontWeight:700,letterSpacing:-0.5}}>Sports Betting Dashboard</h1>
+              <div style={{display:"flex",gap:4}}>
+                <button style={tabBtn(tab==="games")} onClick={()=>setTab("games")}>Games</button>
+                <button style={tabBtn(tab==="summary",C.amb)} onClick={()=>setTab("summary")}>Summary</button>
+              </div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              {uploadMsg&&<span style={{fontSize:10,color:C.grn,fontWeight:600,padding:"4px 10px",background:C.grnB,borderRadius:4,border:`1px solid ${C.grn}44`}}>{uploadMsg}</span>}
+              <div style={{display:"flex",gap:2,background:C.card,borderRadius:5,padding:2,border:`1px solid ${C.bdr}`}}>
+                <button style={{...btn(uploadMode==="merge"),fontSize:9,padding:"3px 8px"}} onClick={()=>setUploadMode("merge")} title="Add new rows from CSV, skip duplicates">Merge</button>
+                <button style={{...btn(uploadMode==="replace"),fontSize:9,padding:"3px 8px"}} onClick={()=>setUploadMode("replace")} title="Replace all data with CSV">Replace</button>
+              </div>
+              <label style={{padding:"6px 14px",fontSize:11,fontWeight:600,background:C.cyn,color:C.bg,borderRadius:6,cursor:"pointer"}}>Upload CSV<input type="file" accept=".csv" onChange={handleFile} style={{display:"none"}}/></label>
+            </div>
+          </div>
+          {tab==="summary"?<SummaryTab data={data} games={games} getESPN={getESPN} latestByGameSrc={latestByGameSrc}/>:<>
+          <div style={{padding:"7px 20px",borderBottom:`1px solid ${C.bdr}`,display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
+            <span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>Date</span>
+            <button style={btn(dateFilter==="all")} onClick={()=>setDateFilter("all")}>All</button>
+            {availDates.some(d=>d===todayStr)&&<button style={btn(dateFilter==="today")} onClick={()=>setDateFilter("today")}>Today</button>}
+            {availDates.some(d=>d===tmrwStr)&&<button style={btn(dateFilter==="tomorrow")} onClick={()=>setDateFilter("tomorrow")}>Tomorrow</button>}
+            <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
+            <span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>Sport</span>
+            <button style={btn(sportFilter==="all")} onClick={()=>setSportFilter("all")}>All</button>
+            {sports.map(s=><button key={s} style={btn(sportFilter===s)} onClick={()=>setSportFilter(s)}>{s.toUpperCase()}</button>)}
+            <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
+            <span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>Source</span>
+            <button style={btn(sourceFilter==="all")} onClick={()=>setSourceFilter("all")}>All</button>
+            {sources.map(s=><button key={s} style={btn(sourceFilter===s)} onClick={()=>setSourceFilter(s)}>{s}</button>)}
+            <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
+            <span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>Sort</span>
+            {[["max_div","Max Div"],["spread_div","Spread"],["total_div","Total"],["time","Time \u2191"],["time_desc","Time \u2193"]].map(([k,l])=><button key={k} style={btn(sortBy===k)} onClick={()=>setSortBy(k)}>{l}</button>)}
+            <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
+            <span style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5}}>Spr Min</span>
+            {[0,10,15,20,30].map(v=><button key={v} style={btn(minSpreadDiv===v)} onClick={()=>setMinSpreadDiv(v)}>{v}%</button>)}
+            <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
+            <span style={{fontSize:9,color:C.pur,textTransform:"uppercase",letterSpacing:1.5}}>O/U Min</span>
+            {[0,10,15,20,30].map(v=><button key={v} style={btn(minTotalDiv===v)} onClick={()=>setMinTotalDiv(v)}>{v}%</button>)}
+          </div>
+          <div style={{display:"flex",flex:1,overflow:"hidden"}}>
+            <div style={{width:520,flexShrink:0,overflowY:"auto",borderRight:`1px solid ${C.bdr}`}}>
+              {ranked.length===0?<div style={{padding:40,textAlign:"center",color:C.txM,fontSize:12}}>No games match filters</div>:ranked.map((g,i)=><GameRow key={`${g.game_id}__${g.source}__${i}`} game={g} espn={getESPN(g)} sel={`${g.game_id}__${g.source}`===selectedId} onClick={()=>selectGame(`${g.game_id}__${g.source}`)} maxDiv={maxDiv} first={firstByGame[`${g.game_id}__${g.source}`]}/>)}
+            </div>
+            <div ref={detailRef} style={{flex:1,overflowY:"auto",padding:24,background:C.panel}}>
+              {!selectedGame?<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.txM,fontSize:13}}>{"\u2190"} Select a game</div>:(()=>{
+                const espn=getESPN(selectedGame),first=firstByGame[`${selectedGame.game_id}__${selectedGame.source}`];
+                const sm=first&&NUM(selectedGame.spread_line)!==NUM(first.spread_line),tm=first&&NUM(selectedGame.total_line)!==NUM(first.total_line);
+                const gd=getGameDate(selectedGame),pred=evalPrediction(selectedGame,espn),done=espn?.done||espn?.sId==="3";
+                const lean=sharpLean(selectedGame);
+                return(<div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div>
+                    <h2 style={{margin:0,fontSize:22,fontWeight:700}}>{selectedGame.away_team} <span style={{color:C.txM,fontWeight:400}}>@</span> {selectedGame.home_team}</h2>
+                    <div style={{display:"flex",gap:10,marginTop:6,fontSize:11,color:C.txD,alignItems:"center",flexWrap:"wrap"}}>
+                      <span>{friendlyDate(gd)}</span>{espn&&espn.time&&<span style={{color:C.cyn,fontWeight:600}}>{espn.time} ET</span>}
+                      <span>{selectedGame.source} · {selectedGame.book}</span><span>{selectedHistory.length} readings</span>
+                      {espn&&<StatusBadge e={espn}/>}{selSrcCount>1&&<span style={{fontSize:9,color:C.pur,fontWeight:600,background:C.purB,padding:"1px 6px",borderRadius:3}}>{selSrcCount} sources</span>}
+                    </div></div></div>
+                  <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
+                    <LinePill v={selectedGame.spread_line} l="SPR" moved={sm} prev={first?.spread_line}/>
+                    <LinePill v={selectedGame.total_line} l="O/U" moved={tm} prev={first?.total_line}/>
+                    {lean.sprLabel&&NUM(selectedGame.spread_bets_handle_divergence)>=5&&<div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:NUM(selectedGame.spread_bets_handle_divergence)>=15?C.ambB:C.card,borderRadius:6,border:`1px solid ${NUM(selectedGame.spread_bets_handle_divergence)>=15?C.ambD:C.bdr}`}}><span style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5}}>Sharp Spr</span><span style={{fontSize:14,fontWeight:700,fontFamily:MN,color:NUM(selectedGame.spread_bets_handle_divergence)>=15?C.amb:C.tx}}>{"\u2192"} {lean.sprLabel}</span></div>}
+                    {lean.totLabel&&NUM(selectedGame.total_bets_handle_divergence)>=5&&<div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:NUM(selectedGame.total_bets_handle_divergence)>=15?C.ambB:C.card,borderRadius:6,border:`1px solid ${NUM(selectedGame.total_bets_handle_divergence)>=15?C.ambD:C.bdr}`}}><span style={{fontSize:9,color:C.pur,textTransform:"uppercase",letterSpacing:1.5}}>Sharp O/U</span><span style={{fontSize:14,fontWeight:700,fontFamily:MN,color:NUM(selectedGame.total_bets_handle_divergence)>=15?C.amb:C.tx}}>{"\u2192"} {lean.totLabel}</span></div>}
+                  </div>
+                  <ScoreBlock e={espn} spr={selectedGame.spread_line} tot={selectedGame.total_line} aw={selectedGame.away_team} hm={selectedGame.home_team} game={selectedGame}/>
+                  {done&&(pred.spread||pred.total)&&(<div style={{marginTop:8,padding:"8px 12px",background:C.card,borderRadius:6,border:`1px solid ${C.bdr}`,display:"flex",gap:12,alignItems:"center"}}>
+                    <span style={{fontSize:9,color:C.txM,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Sharp Signal</span>
+                    {pred.spread&&<span style={{fontSize:11,color:pred.spread==="hit"?C.grn:C.red,fontWeight:600}}>Spread: {pred.spread==="hit"?"\u2714 Correct":"\u2718 Wrong"}</span>}
+                    {pred.total&&<span style={{fontSize:11,color:pred.total==="hit"?C.grn:C.red,fontWeight:600}}>Total: {pred.total==="hit"?"\u2714 Correct":"\u2718 Wrong"}</span>}
+                  </div>)}
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginTop:16,marginBottom:20}}>
+                    {(()=>{const sd=NUM(selectedGame.spread_bets_handle_divergence),td=NUM(selectedGame.total_bets_handle_divergence);return[{l:"Spread Div",v:sd,p:true,clr:sd>=td?C.cyn:null},{l:"Total Div",v:td,p:true,clr:td>sd?C.pur:null},{l:"Readings",v:selectedHistory.length,p:false},{l:"Line Moves",v:(sm?1:0)+(tm?1:0),p:false}];})().map(({l,v,p,clr})=>(
+                      <div key={l} style={{padding:"8px 12px",background:C.card,borderRadius:6,border:`1px solid ${p&&v>=15?C.ambD:clr?clr+"33":C.bdr}`}}>
+                        <div style={{fontSize:9,color:clr||C.txM,textTransform:"uppercase",letterSpacing:1}}>{l}{p&&clr&&v>=15?" \u2605":""}</div>
+                        <div style={{fontSize:20,fontWeight:700,fontFamily:MN,marginTop:2,color:p&&v>=15?C.amb:clr||C.tx}}>{p?`${v.toFixed(1)}%`:v}</div>
+                      </div>))}
+                  </div>
+                  {selSrcCount>=2&&<SourceCompare gameId={selectedGame.game_id} allData={data}/>}
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:20,marginBottom:12}}>
+                    <div style={{display:"flex",gap:14,fontSize:10}}><span><span style={{display:"inline-block",width:10,height:3,borderRadius:1,background:C.hdl,marginRight:4,verticalAlign:"middle"}}/>Handle</span><span><span style={{display:"inline-block",width:10,height:3,borderRadius:1,background:C.bet,marginRight:4,verticalAlign:"middle"}}/>Bets</span></div>
+                    <div style={{display:"flex",gap:4}}>{[["spread","Spread"],["total","Total"],["ml","ML"]].map(([k,l])=><button key={k} style={btn(metric===k)} onClick={()=>setMetric(k)}>{l}</button>)}</div>
+                  </div>
+                  {selectedHistory.length>1?(<><MoveChart history={selectedHistory} metric={metric} containerWidth={chartW}/><div style={{marginTop:16}}/><DivergenceChart history={selectedHistory} containerWidth={chartW}/></>):<div style={{padding:30,textAlign:"center",color:C.txM,fontSize:12}}>Single reading — need 2+ scrapes</div>}
+                </div>);
+              })()}
+            </div>
+          </div></>}
+        </div>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(Dashboard));
+  </script>
+  <script>
+    // Catch ALL errors (including async React render errors)
+    window.onerror = function(msg, url, line, col, error) {
+      document.getElementById('root').innerHTML =
+        '<div style="padding:40px;font-family:sans-serif;color:#E8EAF0;background:#0A0E1A;min-height:100vh">' +
+        '<h2 style="color:#EF4444">Dashboard runtime error</h2>' +
+        '<pre style="color:#8B92B0;margin-top:12px;white-space:pre-wrap;font-size:12px">' +
+        msg + '\nLine: ' + line + ', Col: ' + col +
+        '\n\n' + (error && error.stack ? error.stack : '') + '</pre></div>';
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      document.getElementById('root').innerHTML =
+        '<div style="padding:40px;font-family:sans-serif;color:#E8EAF0;background:#0A0E1A;min-height:100vh">' +
+        '<h2 style="color:#EF4444">Dashboard promise error</h2>' +
+        '<pre style="color:#8B92B0;margin-top:12px;white-space:pre-wrap;font-size:12px">' +
+        (event.reason ? (event.reason.message || String(event.reason)) : 'Unknown') +
+        '\n\n' + (event.reason && event.reason.stack ? event.reason.stack : '') + '</pre></div>';
+    });
+    try {
+      var jsxSource = document.getElementById('app-source').textContent;
+      var compiled = Babel.transform(jsxSource, { presets: ['react'] }).code;
+      var script = document.createElement('script');
+      script.textContent = compiled;
+      document.body.appendChild(script);
+    } catch(e) {
+      document.getElementById('root').innerHTML =
+        '<div style="padding:40px;font-family:sans-serif;color:#E8EAF0;background:#0A0E1A;min-height:100vh">' +
+        '<h2 style="color:#EF4444">Failed to start dashboard</h2>' +
+        '<pre style="color:#8B92B0;margin-top:12px;white-space:pre-wrap;font-size:12px">' +
+        e.message + '\n\n' + (e.stack||'') + '</pre></div>';
+    }
+  </script>
+</body>
+</html>
