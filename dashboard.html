@@ -13,6 +13,7 @@
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
     #root { width: 100vw; height: 100vh; }
     .loader { display:flex;align-items:center;justify-content:center;height:100vh;background:#0A0E1A;color:#8B92B0;font-size:14px; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
   </style>
 </head>
 <body>
@@ -47,6 +48,34 @@
       cbase: "https://site.api.espn.com/apis/site/v2/sports/baseball/college-baseball/scoreboard",
     };
     const SPORT_ALIASES = { ncaaf:"cfb", ncaab:"cbb", ncaam:"cbb", ncaaw:"wcbb", college_football:"cfb", college_basketball:"cbb" };
+
+    // Source display names and filtering
+    const HIDDEN_SOURCES = new Set(["dk_network", "sbd"]);
+    const SOURCE_NAMES = { "vsin_dk": "DK", "vsin_circa": "Circa" };
+    function displaySource(raw) { return SOURCE_NAMES[raw] || raw; }
+
+    // Live data fetching from GitHub
+    const GITHUB_RAW = "https://raw.githubusercontent.com/yxxvccy/multi-scraper/main/data";
+    const SCRAPE_SPORTS = ["cbb", "wcbb", "nba"];
+    const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+    function getDatesToFetch() {
+      const dates = [], now = new Date();
+      for (let offset = -1; offset <= 1; offset++) { const d = new Date(now); d.setDate(d.getDate() + offset); dates.push(fmtDate(d)); }
+      return dates;
+    }
+    async function fetchCSV(url) {
+      try {
+        const resp = await fetch(url + `?t=${Date.now()}`);
+        if (!resp.ok) return [];
+        const text = await resp.text();
+        return new Promise(resolve => { window.Papa.parse(text, { header: true, skipEmptyLines: true, complete: r => resolve(r.data || []), error: () => resolve([]) }); });
+      } catch(e) { return []; }
+    }
+    async function fetchLiveData() {
+      const dates = getDatesToFetch(), jobs = [];
+      for (const sport of SCRAPE_SPORTS) for (const date of dates) jobs.push(`${GITHUB_RAW}/timeseries/${sport}_${date}.csv`);
+      return (await Promise.all(jobs.map(fetchCSV))).flat();
+    }
 
     function normName(s) { return (s||"").toLowerCase().replace(/[^\w\s]/g,"").replace(/\s+/g," ").trim(); }
     const ABBREVS={"s ":"south ","n ":"north ","e ":"east ","w ":"west ","c ":"central ","st ":"state ","st. ":"state ","mt ":"mount ","ft ":"fort ","u ":"university ","uc ":"uc ","so ":"southern ","no ":"northern ","fla ":"florida ","ga ":"georgia ","la ":"louisiana ","miss ":"mississippi ","ark ":"arkansas ","ala ":"alabama ","tenn ":"tennessee ","mich ":"michigan ","minn ":"minnesota ","conn ":"connecticut ","mass ":"massachusetts ","penn ":"penn ","col ":"colorado ","ore ":"oregon ","wash ":"washington ","okla ":"oklahoma ","neb ":"nebraska ","wis ":"wisconsin ","ill ":"illinois "};
@@ -135,28 +164,6 @@
       return { sprSide, sprLabel, totSide, totLabel };
     }
 
-    const mk = (id,aw,hm,sp,sF,tF,dF,src="vsin_dk",bk="draftkings") => [1,2,3,4,5,6,7,8].map(n=>({
-      timestamp:`2026-02-15T${String(7+n).padStart(2,"0")}:30:00`,source:src,book:bk,sport:sp,
-      game_id:id,game_date:"Feb 15",away_team:aw,home_team:hm,
-      spread_line:sF(n),total_line:tF(n),
-      spread_away_bets_pct:55+n*2,spread_home_bets_pct:45-n*2,
-      spread_away_handle_pct:60+n*3,spread_home_handle_pct:40-n*3,
-      total_over_bets_pct:52+n,total_under_bets_pct:48-n,
-      total_over_handle_pct:38+n*2,total_under_handle_pct:62-n*2,
-      ml_away_bets_pct:58+n,ml_home_bets_pct:42-n,ml_away_handle_pct:65+n*2,ml_home_handle_pct:35-n*2,
-      spread_bets_handle_divergence:dF(n),total_bets_handle_divergence:Math.abs(14-n*2),scrape_num:n,
-    }));
-    const SAMPLE = [
-      ...mk("wcbb_20260215_south_carolina_lsu","South Carolina","LSU","wcbb",n=>n>=5?-3:-2.5,()=>155.5,n=>Math.abs(5+n)),
-      ...mk("wcbb_20260215_south_carolina_lsu","South Carolina","LSU","wcbb",n=>n>=5?-3.5:-3,()=>156,n=>Math.abs(4+n),"vsin_circa","circa"),
-      ...mk("cbb_20260215_purdue_indiana","Purdue","Indiana","cbb",n=>-6.5-n*0.2,n=>140+n*0.5,n=>Math.abs(8-n)),
-      ...mk("nba_20260215_lakers_celtics","Lakers","Celtics","nba",()=>4.5,()=>218.5,n=>18+n*2),
-      ...mk("nba_20260215_warriors_heat","Warriors","Heat","nba",n=>-2-n*0.3,()=>225,n=>20-n),
-      ...mk("nba_20260215_bucks_nets","Bucks","Nets","nba",()=>-8.5,n=>230-n,()=>12),
-      ...mk("nhl_20260215_bruins_rangers","Bruins","Rangers","nhl",()=>-1.5,()=>6,()=>8),
-      ...mk("nhl_20260215_lightning_panthers","Lightning","Panthers","nhl",n=>1.5-n*0.1,()=>6.5,n=>15-n),
-    ];
-
     const C = {
       bg:"#0A0E1A", card:"#12162B", panel:"#0E1220", bdr:"#1E2438",
       tx:"#E8EAF0", txM:"#8B92B0", txD:"#5D6481",
@@ -233,7 +240,7 @@
             const sdiv=NUM(r.spread_bets_handle_divergence),tdiv=NUM(r.total_bets_handle_divergence);
             return(<div key={s} style={{padding:"10px 12px",background:C.bg,borderRadius:6,border:`1px solid ${C.bdr}`}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                <span style={{fontSize:11,fontWeight:700,color:C.tx}}>{s}</span>
+                <span style={{fontSize:11,fontWeight:700,color:C.tx}}>{displaySource(s)}</span>
                 <span style={{fontSize:10,fontFamily:MN,color:C.cyn,fontWeight:600}}>Spr {r.spread_line||"—"}</span>
                 <span style={{fontSize:10,fontFamily:MN,color:C.pur,fontWeight:600}}>O/U {r.total_line||"—"}</span>
               </div>
@@ -310,7 +317,7 @@
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:600,color:C.tx}}>{game.away_team} <span style={{color:C.txM,fontWeight:400}}>@</span> {game.home_team}</div>
-              <div style={{display:"flex",gap:8,marginTop:3,fontSize:10,color:C.txD,flexWrap:"wrap",alignItems:"center"}}><span>{friendlyDate(getGameDate(game))}</span>{espn&&espn.time&&<span style={{color:C.cyn,fontWeight:600}}>{espn.time}</span>}<span>{game.sport.toUpperCase()}</span><span>{game.source}</span>
+              <div style={{display:"flex",gap:8,marginTop:3,fontSize:10,color:C.txD,flexWrap:"wrap",alignItems:"center"}}><span>{friendlyDate(getGameDate(game))}</span>{espn&&espn.time&&<span style={{color:C.cyn,fontWeight:600}}>{espn.time}</span>}<span>{game.sport.toUpperCase()}</span><span>{displaySource(game.source)}</span>
                 {sm&&<span style={{display:"inline-flex",alignItems:"center",gap:3,color:C.amb,fontWeight:700,fontSize:9,background:C.ambB,border:`1px solid ${C.ambD}`,borderRadius:3,padding:"1px 6px"}}>
                   <span style={{fontSize:8,color:C.txM,fontWeight:600}}>SPR</span>
                   <span style={{fontFamily:MN}}>{NUM(first.spread_line)>NUM(game.spread_line)?"\u25BC":"\u25B2"}</span>
@@ -421,7 +428,7 @@
       return(<div style={{padding:24,overflowY:"auto",height:"100%"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16}}>
           <h2 style={{margin:0,fontSize:20,fontWeight:700}}>Sharp Signal Summary</h2>
-          <span style={{fontSize:9,fontWeight:700,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5,padding:"3px 8px",background:C.cyn+"18",border:`1px solid ${C.cyn}44`,borderRadius:4}}>vsin_dk only</span>
+          <span style={{fontSize:9,fontWeight:700,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5,padding:"3px 8px",background:C.cyn+"18",border:`1px solid ${C.cyn}44`,borderRadius:4}}>DK only</span>
         </div>
         <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginBottom:20}}>
           <span style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5}}>Spr Min Div</span>
@@ -465,34 +472,62 @@
 
     /* ========== Main Dashboard ========== */
     function Dashboard(){
-      const [data,setData]=useState(SAMPLE);
+      const [data,setData]=useState([]);
+      const [loading,setLoading]=useState(true);
+      const [fetchError,setFetchError]=useState(null);
+      const [lastFetch,setLastFetch]=useState(null);
+      const [manualUpload,setManualUpload]=useState(false);
       const [sportFilter,setSportFilter]=useState("all");
       const [sourceFilter,setSourceFilter]=useState("vsin_dk");
       const [dateFilter,setDateFilter]=useState("all");
       const [sortBy,setSortBy]=useState("max_div");
-      const [minSpreadDiv,setMinSpreadDiv]=useState(0);
-      const [minTotalDiv,setMinTotalDiv]=useState(0);
+      const [minSpreadDiv,setMinSpreadDiv]=useState(20);
+      const [minTotalDiv,setMinTotalDiv]=useState(20);
       const [selectedId,setSelectedId]=useState(null);
       const [metric,setMetric]=useState("spread");
       const [espnCache,setEspnCache]=useState({});
       const [tab,setTab]=useState("games");
+
+      // Live data fetch on mount + auto-refresh
+      const firstLoad = useRef(true);
+      useEffect(()=>{
+        if(manualUpload) return;
+        let cancelled = false;
+        async function doFetch(){
+          try {
+            if(firstLoad.current) setLoading(true);
+            const rows = await fetchLiveData();
+            if(cancelled) return;
+            if(rows.length > 0){ setData(rows); setFetchError(null); }
+            else { setFetchError("No data found for recent dates. The scraper may not have run yet."); }
+            setLastFetch(new Date());
+          } catch(err) { if(!cancelled) setFetchError("Failed to fetch data: " + err.message); }
+          finally { if(!cancelled){ setLoading(false); firstLoad.current = false; } }
+        }
+        doFetch();
+        const interval = setInterval(doFetch, REFRESH_INTERVAL_MS);
+        return () => { cancelled = true; clearInterval(interval); };
+      },[manualUpload]);
+
+      // Filter hidden sources for display
+      const filteredData=useMemo(()=>data.filter(r=>!HIDDEN_SOURCES.has(r.source)),[data]);
 
       const selectGame=useCallback(id=>setSelectedId(id),[]);
       const detailRef=useRef(null);
       const detailWidth=useContainerWidth(detailRef);
 
       useEffect(()=>{
-        const dates=new Set(data.map(r=>getGameDate(r)));
-        const sports=new Set(data.map(r=>SPORT_ALIASES[r.sport]||r.sport));
+        const dates=new Set(filteredData.map(r=>getGameDate(r)));
+        const sports=new Set(filteredData.map(r=>SPORT_ALIASES[r.sport]||r.sport));
         const jobs=[];
         dates.forEach(dt=>{sports.forEach(sp=>{const k=`${sp}_${dt}`;if(!espnCache[k])jobs.push({sport:sp,date:dt,key:k});});});
         if(jobs.length===0)return;
         Promise.all(jobs.map(async({sport,date,key})=>{const g=await fetchESPN(sport,date);return{key,games:g};})).then(res=>{const upd={...espnCache};res.forEach(({key,games})=>upd[key]=games);setEspnCache(upd);});
-      },[data]);
+      },[filteredData]);
 
       const getESPN=useCallback(game=>{const dt=getGameDate(game),resolved=SPORT_ALIASES[game.sport]||game.sport,k=`${resolved}_${dt}`,eg=espnCache[k];return eg?matchESPN(game,eg):null;},[espnCache]);
-      const latestByGameSrc=useMemo(()=>{const m={};data.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||r.scrape_num>m[k].scrape_num)m[k]=r;});return m;},[data]);
-      const firstByGame=useMemo(()=>{const m={};data.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||r.scrape_num<m[k].scrape_num)m[k]=r;});return m;},[data]);
+      const latestByGameSrc=useMemo(()=>{const m={};filteredData.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||r.scrape_num>m[k].scrape_num)m[k]=r;});return m;},[filteredData]);
+      const firstByGame=useMemo(()=>{const m={};filteredData.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||r.scrape_num<m[k].scrape_num)m[k]=r;});return m;},[filteredData]);
       const games=useMemo(()=>Object.values(latestByGameSrc),[latestByGameSrc]);
       const todayStr=useMemo(()=>fmtDate(new Date()),[]);
       const tmrwStr=useMemo(()=>{const t=new Date();t.setDate(t.getDate()+1);return fmtDate(t);},[]);
@@ -525,13 +560,15 @@
 
       useEffect(()=>{if(!selectedGame)return;const sd=NUM(selectedGame.spread_bets_handle_divergence),td=NUM(selectedGame.total_bets_handle_divergence);setMetric(td>sd?"total":"spread");},[selectedId]);
 
-      const selectedHistory=useMemo(()=>{if(!selectedId)return[];const[gid,src]=selectedId.split("__");return data.filter(r=>r.game_id===gid&&r.source===src).sort((a,b)=>(a.scrape_num||0)-(b.scrape_num||0));},[selectedId,data]);
-      const selSrcCount=useMemo(()=>{if(!selectedGame)return 0;return new Set(data.filter(r=>r.game_id===selectedGame.game_id).map(r=>r.source)).size;},[selectedGame,data]);
+      const selectedHistory=useMemo(()=>{if(!selectedId)return[];const[gid,src]=selectedId.split("__");return filteredData.filter(r=>r.game_id===gid&&r.source===src).sort((a,b)=>(a.scrape_num||0)-(b.scrape_num||0));},[selectedId,filteredData]);
+      const selSrcCount=useMemo(()=>{if(!selectedGame)return 0;return new Set(filteredData.filter(r=>r.game_id===selectedGame.game_id).map(r=>r.source)).size;},[selectedGame,filteredData]);
 
       const [uploadMode,setUploadMode]=useState("merge");
       const [uploadMsg,setUploadMsg]=useState(null);
 
-      const handleFile=useCallback(e=>{const f=e.target.files?.[0];if(!f)return;e.target.value="";window.Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>{if(!r.data||r.data.length===0)return;if(uploadMode==="replace"){setData(r.data);setUploadMsg(`Loaded ${r.data.length} rows`);}else{setData(prev=>{const key=row=>`${row.game_id}||${row.source}||${row.timestamp}`;const existing=new Set(prev.map(key));const newRows=r.data.filter(row=>!existing.has(key(row)));const merged=[...prev,...newRows];setUploadMsg(`Merged +${newRows.length} new rows (${merged.length} total)`);return merged;});}setTimeout(()=>setUploadMsg(null),4000);}});},[uploadMode]);
+      const handleFile=useCallback(e=>{const f=e.target.files?.[0];if(!f)return;e.target.value="";window.Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>{if(!r.data||r.data.length===0)return;setManualUpload(true);if(uploadMode==="replace"){setData(r.data);setUploadMsg(`Loaded ${r.data.length} rows`);}else{setData(prev=>{const key=row=>`${row.game_id}||${row.source}||${row.timestamp}`;const existing=new Set(prev.map(key));const newRows=r.data.filter(row=>!existing.has(key(row)));const merged=[...prev,...newRows];setUploadMsg(`Merged +${newRows.length} new rows (${merged.length} total)`);return merged;});}setTimeout(()=>setUploadMsg(null),4000);}});},[uploadMode]);
+
+      const resetToLive=useCallback(()=>{ setManualUpload(false); setData([]); setLoading(true); setSelectedId(null); },[]);
 
       const btn=sel=>({padding:"4px 10px",fontSize:10,fontWeight:600,background:sel?C.cyn:"transparent",color:sel?C.bg:C.txM,border:`1px solid ${sel?C.cyn:C.bdr}`,borderRadius:4,cursor:"pointer",transition:"all 0.15s"});
       const tabBtn=(sel,clr)=>({padding:"6px 16px",fontSize:11,fontWeight:700,background:sel?(clr||C.cyn):"transparent",color:sel?C.bg:C.txM,border:`1px solid ${sel?(clr||C.cyn):C.bdr}`,borderRadius:6,cursor:"pointer",letterSpacing:0.5});
@@ -546,9 +583,13 @@
                 <button style={tabBtn(tab==="games")} onClick={()=>setTab("games")}>Games</button>
                 <button style={tabBtn(tab==="summary",C.amb)} onClick={()=>setTab("summary")}>Summary</button>
               </div>
+              {!manualUpload && lastFetch && <span style={{fontSize:9,color:C.txD,fontFamily:MN}}>Updated {lastFetch.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",hour12:true})}</span>}
+              {!manualUpload && !loading && data.length > 0 && <span style={{width:6,height:6,borderRadius:3,background:C.grn,display:"inline-block",animation:"pulse 2s infinite"}}/>}
+              {manualUpload && <span style={{fontSize:9,color:C.amb,fontWeight:600,padding:"2px 8px",background:C.ambB,borderRadius:4,border:`1px solid ${C.ambD}`}}>MANUAL CSV</span>}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               {uploadMsg&&<span style={{fontSize:10,color:C.grn,fontWeight:600,padding:"4px 10px",background:C.grnB,borderRadius:4,border:`1px solid ${C.grn}44`}}>{uploadMsg}</span>}
+              {manualUpload && <button onClick={resetToLive} style={{padding:"6px 14px",fontSize:11,fontWeight:600,background:C.grn,color:C.bg,borderRadius:6,cursor:"pointer",border:"none"}}>Go Live</button>}
               <div style={{display:"flex",gap:2,background:C.card,borderRadius:5,padding:2,border:`1px solid ${C.bdr}`}}>
                 <button style={{...btn(uploadMode==="merge"),fontSize:9,padding:"3px 8px"}} onClick={()=>setUploadMode("merge")} title="Add new rows from CSV, skip duplicates">Merge</button>
                 <button style={{...btn(uploadMode==="replace"),fontSize:9,padding:"3px 8px"}} onClick={()=>setUploadMode("replace")} title="Replace all data with CSV">Replace</button>
@@ -556,7 +597,7 @@
               <label style={{padding:"6px 14px",fontSize:11,fontWeight:600,background:C.cyn,color:C.bg,borderRadius:6,cursor:"pointer"}}>Upload CSV<input type="file" accept=".csv" onChange={handleFile} style={{display:"none"}}/></label>
             </div>
           </div>
-          {tab==="summary"?<SummaryTab data={data} games={games} getESPN={getESPN} latestByGameSrc={latestByGameSrc}/>:<>
+          {tab==="summary"?<SummaryTab data={filteredData} games={games} getESPN={getESPN} latestByGameSrc={latestByGameSrc}/>:<>
           <div style={{padding:"7px 20px",borderBottom:`1px solid ${C.bdr}`,display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
             <span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>Date</span>
             <button style={btn(dateFilter==="all")} onClick={()=>setDateFilter("all")}>All</button>
@@ -569,7 +610,7 @@
             <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
             <span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>Source</span>
             <button style={btn(sourceFilter==="all")} onClick={()=>setSourceFilter("all")}>All</button>
-            {sources.map(s=><button key={s} style={btn(sourceFilter===s)} onClick={()=>setSourceFilter(s)}>{s}</button>)}
+            {sources.map(s=><button key={s} style={btn(sourceFilter===s)} onClick={()=>setSourceFilter(s)}>{displaySource(s)}</button>)}
             <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
             <span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>Sort</span>
             {[["max_div","Max Div"],["spread_div","Spread"],["total_div","Total"],["time","Time \u2191"],["time_desc","Time \u2193"]].map(([k,l])=><button key={k} style={btn(sortBy===k)} onClick={()=>setSortBy(k)}>{l}</button>)}
@@ -582,7 +623,7 @@
           </div>
           <div style={{display:"flex",flex:1,overflow:"hidden"}}>
             <div style={{width:520,flexShrink:0,overflowY:"auto",borderRight:`1px solid ${C.bdr}`}}>
-              {ranked.length===0?<div style={{padding:40,textAlign:"center",color:C.txM,fontSize:12}}>No games match filters</div>:ranked.map((g,i)=><GameRow key={`${g.game_id}__${g.source}__${i}`} game={g} espn={getESPN(g)} sel={`${g.game_id}__${g.source}`===selectedId} onClick={()=>selectGame(`${g.game_id}__${g.source}`)} maxDiv={maxDiv} first={firstByGame[`${g.game_id}__${g.source}`]}/>)}
+              {loading?<div style={{padding:40,textAlign:"center",color:C.txM,fontSize:12}}><div style={{marginBottom:8,fontSize:14}}>Loading live data...</div><div style={{fontSize:10,color:C.txD}}>Fetching from GitHub repository</div></div>:fetchError&&data.length===0?<div style={{padding:40,textAlign:"center",color:C.amb,fontSize:12}}><div style={{marginBottom:8,fontSize:14}}>{fetchError}</div><div style={{fontSize:10,color:C.txD}}>You can upload a CSV manually using the button above</div></div>:ranked.length===0?<div style={{padding:40,textAlign:"center",color:C.txM,fontSize:12}}>No games match filters</div>:ranked.map((g,i)=><GameRow key={`${g.game_id}__${g.source}__${i}`} game={g} espn={getESPN(g)} sel={`${g.game_id}__${g.source}`===selectedId} onClick={()=>selectGame(`${g.game_id}__${g.source}`)} maxDiv={maxDiv} first={firstByGame[`${g.game_id}__${g.source}`]}/>)}
             </div>
             <div ref={detailRef} style={{flex:1,overflowY:"auto",padding:24,background:C.panel}}>
               {!selectedGame?<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.txM,fontSize:13}}>{"\u2190"} Select a game</div>:(()=>{
@@ -595,7 +636,7 @@
                     <h2 style={{margin:0,fontSize:22,fontWeight:700}}>{selectedGame.away_team} <span style={{color:C.txM,fontWeight:400}}>@</span> {selectedGame.home_team}</h2>
                     <div style={{display:"flex",gap:10,marginTop:6,fontSize:11,color:C.txD,alignItems:"center",flexWrap:"wrap"}}>
                       <span>{friendlyDate(gd)}</span>{espn&&espn.time&&<span style={{color:C.cyn,fontWeight:600}}>{espn.time} ET</span>}
-                      <span>{selectedGame.source} · {selectedGame.book}</span><span>{selectedHistory.length} readings</span>
+                      <span>{displaySource(selectedGame.source)} · {selectedGame.book}</span><span>{selectedHistory.length} readings</span>
                       {espn&&<StatusBadge e={espn}/>}{selSrcCount>1&&<span style={{fontSize:9,color:C.pur,fontWeight:600,background:C.purB,padding:"1px 6px",borderRadius:3}}>{selSrcCount} sources</span>}
                     </div></div></div>
                   <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
@@ -617,7 +658,7 @@
                         <div style={{fontSize:20,fontWeight:700,fontFamily:MN,marginTop:2,color:p&&v>=15?C.amb:clr||C.tx}}>{p?`${v.toFixed(1)}%`:v}</div>
                       </div>))}
                   </div>
-                  {selSrcCount>=2&&<SourceCompare gameId={selectedGame.game_id} allData={data}/>}
+                  {selSrcCount>=2&&<SourceCompare gameId={selectedGame.game_id} allData={filteredData}/>}
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:20,marginBottom:12}}>
                     <div style={{display:"flex",gap:14,fontSize:10}}><span><span style={{display:"inline-block",width:10,height:3,borderRadius:1,background:C.hdl,marginRight:4,verticalAlign:"middle"}}/>Handle</span><span><span style={{display:"inline-block",width:10,height:3,borderRadius:1,background:C.bet,marginRight:4,verticalAlign:"middle"}}/>Bets</span></div>
                     <div style={{display:"flex",gap:4}}>{[["spread","Spread"],["total","Total"],["ml","ML"]].map(([k,l])=><button key={k} style={btn(metric===k)} onClick={()=>setMetric(k)}>{l}</button>)}</div>
