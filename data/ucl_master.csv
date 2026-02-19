@@ -47,3 +47,11 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-02-19T12:43:44.320575,vsin_dk,draftkings,ucl,ucl_20260219_galatasaray_juventus,,,Galatasaray,Juventus,400.0,41.0,59.0,80.0,20.0,,,,,,,,,,39.0,,True,,4,0.0,0.0,0.0,0.0,0.0,,,,,,,
 2026-02-19T12:43:44.320575,vsin_dk,draftkings,ucl,ucl_20260219_benfica_real_madrid,,,Benfica,Real Madrid,500.0,8.0,92.0,16.0,84.0,,,,,,,,,,8.0,,False,,4,0.0,0.0,0.0,0.0,0.0,,,,,,,
 2026-02-19T12:43:44.320575,vsin_dk,draftkings,ucl,ucl_20260219_monaco_paris_stgermain,,,Monaco,Paris St-Germain,850.0,6.0,94.0,30.0,70.0,,,,,,,,,,24.0,,True,,4,0.0,0.0,0.0,0.0,0.0,,,,,,,
+2026-02-19T13:24:54.403281,vsin_dk,draftkings,ucl,ucl_20260219_club_brugge_atletico_madrid,,,Club Brugge,Atletico Madrid,650.0,13.0,87.0,34.0,66.0,,,,,,,100.0,,100.0,21.0,,True,,5,0.0,0.0,0.0,0.0,0.0,,,,,,,0.0
+2026-02-19T13:24:54.403281,vsin_dk,draftkings,ucl,ucl_20260219_olympiakos_leverkusen,,,Olympiakos,Leverkusen,320.0,3.0,97.0,3.0,97.0,,,,,,,,,,0.0,,False,,5,0.0,0.0,0.0,0.0,0.0,,,,,,,
+2026-02-19T13:24:54.403281,vsin_dk,draftkings,ucl,ucl_20260219_fk_qarabag_newcastle,,,FK Qarabag,Newcastle,1600.0,4.0,96.0,47.0,53.0,,,,,,,,,,43.0,,True,,5,0.0,0.0,0.0,0.0,0.0,,,,,,,
+2026-02-19T13:24:54.403281,vsin_dk,draftkings,ucl,ucl_20260219_bodo_glimt_inter_milan,,,Bodo Glimt,Inter Milan,800.0,37.0,63.0,90.0,10.0,,,,,,,100.0,,100.0,53.0,,True,,5,0.0,2.0,-2.0,1.0,-1.0,,,,,,,0.0
+2026-02-19T13:24:54.403281,vsin_dk,draftkings,ucl,ucl_20260219_dortmund_atalanta,,,Dortmund,Atalanta,210.0,70.0,30.0,91.0,9.0,,,,,,,,,,21.0,,True,,5,0.0,0.0,0.0,0.0,0.0,,,,,,,
+2026-02-19T13:24:54.403281,vsin_dk,draftkings,ucl,ucl_20260219_galatasaray_juventus,,,Galatasaray,Juventus,400.0,41.0,59.0,80.0,20.0,,,,,,,,,,39.0,,True,,5,0.0,0.0,0.0,0.0,0.0,,,,,,,
+2026-02-19T13:24:54.403281,vsin_dk,draftkings,ucl,ucl_20260219_benfica_real_madrid,,,Benfica,Real Madrid,500.0,8.0,92.0,16.0,84.0,,,,,,,,,,8.0,,False,,5,0.0,0.0,0.0,0.0,0.0,,,,,,,
+2026-02-19T13:24:54.403281,vsin_dk,draftkings,ucl,ucl_20260219_monaco_paris_stgermain,,,Monaco,Paris St-Germain,850.0,5.0,95.0,30.0,70.0,,,,,,,,,,25.0,,True,,5,0.0,-1.0,1.0,0.0,0.0,,,,,,,
