@@ -23,7 +23,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run scraper
-        run: python multi_scraper.py --batch cbb wcbb --once
+        run: python multi_scraper.py --batch cbb wcbb nba --once
 
       - name: Commit and push new data
         run: |
