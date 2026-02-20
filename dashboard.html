@@ -54,6 +54,12 @@
     const SOURCE_NAMES = { "vsin_dk": "DK", "vsin_circa": "Circa" };
     function displaySource(raw) { return SOURCE_NAMES[raw] || raw; }
 
+    // Sports where the primary side market is moneyline, not spread
+    const ML_SPORTS = new Set(["cbase", "mlb", "nhl"]);
+    function isMLSport(sport) { return ML_SPORTS.has(sport); }
+    function sprLabel(sport) { return isMLSport(sport) ? "ML" : "Spr"; }
+    function spreadLabel(sport) { return isMLSport(sport) ? "Moneyline" : "Spread"; }
+
     // Live data fetching from GitHub
     const GITHUB_RAW = "https://raw.githubusercontent.com/yxxvccy/multi-scraper/main/data";
     const SCRAPE_SPORTS = ["cbb", "wcbb", "nba", "nfl", "nhl", "mlb", "epl", "ucl", "cfb", "cbase"];
@@ -222,12 +228,13 @@
     }
     function MoveChart({history,metric,containerWidth}){const data=history.map(r=>{const t=r.timestamp?.split("T")[1]?.slice(0,5)||`#${r.scrape_num}`;return{time:t,awH:NUM(r[`${metric}_away_handle_pct`])||NUM(r[`${metric}_over_handle_pct`]),awB:NUM(r[`${metric}_away_bets_pct`])};});return(<div><div style={{marginBottom:8}}><span style={{fontSize:11,fontWeight:700,color:C.txD,textTransform:"uppercase",letterSpacing:1.5}}>{metric==="ml"?"Moneyline":metric==="total"?"Total (Over/Under)":"Spread"} Movement</span></div><SVGAreaChart data={data} width={containerWidth} height={280} dataKeyX="time" yDomain={[0,100]} refLineY={50} lines={[{key:"awH",color:C.hdl},{key:"awB",color:C.bet}]}/></div>);}
     function DivergenceChart({history,containerWidth}){const data=history.map(r=>({time:r.timestamp?.split("T")[1]?.slice(0,5)||`#${r.scrape_num}`,spread:NUM(r.spread_bets_handle_divergence),total:NUM(r.total_bets_handle_divergence)}));return(<div><div style={{marginBottom:8}}><span style={{fontSize:11,fontWeight:700,color:C.txD,textTransform:"uppercase",letterSpacing:1.5}}>Divergence Over Time</span></div><SVGBarChart data={data} width={containerWidth} height={210} dataKeyX="time" refLineY={15} bars={[{key:"spread",color:C.cyn,colorFn:(d,v)=>v>=15?C.amb:C.cyn},{key:"total",color:C.pur,colorFn:(d,v)=>v>=15?C.amb:C.pur}]}/></div>);}
-    function SourceCompare({gameId,allData}){
+    function SourceCompare({gameId,allData,sport}){
       const rows=allData.filter(r=>r.game_id===gameId);
       const bySrc=rows.reduce((a,r)=>{const k=r.source;if(!a[k])a[k]=[];a[k].push(r);return a;},{});
       const srcs=Object.keys(bySrc);
       if(srcs.length<2)return null;
       const last={};srcs.forEach(s=>{const h=bySrc[s].sort((a,b)=>(a.scrape_num||0)-(b.scrape_num||0));last[s]=h[h.length-1];});
+      const sL=sprLabel(sport), fL=spreadLabel(sport);
       function PctBar({val,color}){return(<div style={{marginTop:4,height:3,background:C.bdr,borderRadius:2,overflow:"hidden"}}><div style={{width:`${Math.min(100,val)}%`,height:"100%",background:color,borderRadius:2}}/></div>);}
       function BigPct({val,label,color,highlight}){return(<div style={{textAlign:"center",minWidth:52}}><div style={{fontSize:9,color:color,textTransform:"uppercase",letterSpacing:1,fontWeight:700,marginBottom:1}}>{label}</div><div style={{fontSize:22,fontWeight:800,fontFamily:MN,lineHeight:1,color:highlight?C.amb:C.tx}}>{val.toFixed(1)}<span style={{fontSize:12,fontWeight:600,color:highlight?C.amb:color}}>%</span></div><PctBar val={val} color={highlight?C.amb:color}/></div>);}
       return(<div style={{marginTop:16,padding:"14px 16px",background:C.card,borderRadius:8,border:`1px solid ${C.bdr}`}}>
@@ -241,13 +248,13 @@
             return(<div key={s} style={{padding:"10px 12px",background:C.bg,borderRadius:6,border:`1px solid ${C.bdr}`}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                 <span style={{fontSize:11,fontWeight:700,color:C.tx}}>{displaySource(s)}</span>
-                <span style={{fontSize:10,fontFamily:MN,color:C.cyn,fontWeight:600}}>Spr {r.spread_line||"—"}</span>
+                <span style={{fontSize:10,fontFamily:MN,color:C.cyn,fontWeight:600}}>{sL} {r.spread_line||"\u2014"}</span>
                 <span style={{fontSize:10,fontFamily:MN,color:C.pur,fontWeight:600}}>O/U {r.total_line||"—"}</span>
               </div>
               <div style={{display:"flex",gap:0,alignItems:"stretch"}}>
                 {/* SPREAD SECTION */}
                 <div style={{flex:1,paddingRight:14,borderRight:`1px solid ${C.bdr}`}}>
-                  <div style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700,marginBottom:8}}>Spread</div>
+                  <div style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700,marginBottom:8}}>{fL}</div>
                   <div style={{display:"flex",gap:10,alignItems:"flex-start",flexWrap:"wrap"}}>
                     <div style={{flex:1,minWidth:100}}>
                       <div style={{fontSize:8,color:C.txD,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Away Handle / Bets</div>
@@ -266,7 +273,7 @@
                       </div>
                     </div>
                     <div style={{flexShrink:0,padding:"6px 10px",background:sdiv>=15?C.ambB:C.card,borderRadius:5,border:`1px solid ${sdiv>=15?C.ambD:C.bdr}`,textAlign:"center",minWidth:58}}>
-                      <div style={{fontSize:8,color:C.cyn,textTransform:"uppercase",letterSpacing:1,fontWeight:700}}>Spr Div</div>
+                      <div style={{fontSize:8,color:C.cyn,textTransform:"uppercase",letterSpacing:1,fontWeight:700}}>{sL} Div</div>
                       <div style={{fontSize:24,fontWeight:800,fontFamily:MN,lineHeight:1.1,color:sdiv>=15?C.amb:C.tx,marginTop:2}}>{sdiv.toFixed(1)}<span style={{fontSize:13,fontWeight:600}}>%</span></div>
                     </div>
                   </div>
@@ -310,6 +317,7 @@
       const sm=first&&NUM(game.spread_line)!==NUM(first.spread_line),tm=first&&NUM(game.total_line)!==NUM(first.total_line),moved=sm||tm;
       const pct=maxDiv>0?(div/maxDiv)*100:0;
       const lean=sharpLean(game);
+      const ml=isMLSport(game.sport), sL=sprLabel(game.sport), fL=spreadLabel(game.sport);
       const s={padding:"12px 16px",borderBottom:`1px solid ${C.bdr}`,cursor:"pointer",background:sel?C.panel:C.bg,position:"relative",overflow:"hidden",transition:"background 0.15s"};
       return(<div style={s} onClick={onClick} onMouseEnter={e=>e.currentTarget.style.background=sel?C.panel:C.card} onMouseLeave={e=>e.currentTarget.style.background=sel?C.panel:C.bg}>
         <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${pct}%`,background:`linear-gradient(90deg, ${C.ambB} 0%, transparent 100%)`,pointerEvents:"none"}}/>
@@ -319,7 +327,7 @@
               <div style={{fontSize:13,fontWeight:600,color:C.tx}}>{game.away_team} <span style={{color:C.txM,fontWeight:400}}>@</span> {game.home_team}</div>
               <div style={{display:"flex",gap:8,marginTop:3,fontSize:10,color:C.txD,flexWrap:"wrap",alignItems:"center"}}><span>{friendlyDate(getGameDate(game))}</span>{espn&&espn.time&&<span style={{color:C.cyn,fontWeight:600}}>{espn.time}</span>}<span>{game.sport.toUpperCase()}</span><span>{displaySource(game.source)}</span>
                 {sm&&<span style={{display:"inline-flex",alignItems:"center",gap:3,color:C.amb,fontWeight:700,fontSize:9,background:C.ambB,border:`1px solid ${C.ambD}`,borderRadius:3,padding:"1px 6px"}}>
-                  <span style={{fontSize:8,color:C.txM,fontWeight:600}}>SPR</span>
+                  <span style={{fontSize:8,color:C.txM,fontWeight:600}}>{sL}</span>
                   <span style={{fontFamily:MN}}>{NUM(first.spread_line)>NUM(game.spread_line)?"\u25BC":"\u25B2"}</span>
                   <span style={{fontFamily:MN}}>{first.spread_line}</span>
                   <span style={{color:C.txM}}>{"\u2192"}</span>
@@ -336,10 +344,10 @@
               </div>
             </div>
           </div>
-          {/* NEW: Sharp lean pills */}
+          {/* Sharp lean pills */}
           <div style={{display:"flex",gap:5,marginBottom:6,flexWrap:"wrap"}}>
             {sd>=5&&lean.sprLabel&&<div style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",background:sd>=15?C.ambB:C.card,border:`1px solid ${sd>=15?C.ambD:C.bdr}`,borderRadius:4}}>
-              <span style={{fontSize:8,fontWeight:700,color:C.cyn,letterSpacing:1}}>SPR</span>
+              <span style={{fontSize:8,fontWeight:700,color:C.cyn,letterSpacing:1}}>{sL}</span>
               <span style={{fontSize:9,color:sd>=15?C.amb:C.cyn}}>{"\u2192"}</span>
               <span style={{fontSize:10,fontWeight:700,fontFamily:MN,color:sd>=15?C.amb:C.tx}}>{lean.sprLabel}</span>
               <span style={{fontSize:9,fontWeight:600,fontFamily:MN,color:sd>=15?C.amb:C.txM}}>{sd.toFixed(0)}%</span>
@@ -352,9 +360,9 @@
             </div>}
           </div>
           <div style={{display:"flex",gap:8}}>
-            <div style={{flex:1,padding:"5px 10px",background:C.card,borderRadius:4,border:`1px solid ${sm?C.amb:C.bdr}`}}><div style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1}}>Spread</div><div style={{fontSize:14,fontWeight:700,fontFamily:MN,marginTop:1,color:sm?C.amb:C.tx}}>{game.spread_line||"\u2014"}</div></div>
+            <div style={{flex:1,padding:"5px 10px",background:C.card,borderRadius:4,border:`1px solid ${sm?C.amb:C.bdr}`}}><div style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1}}>{fL}</div><div style={{fontSize:14,fontWeight:700,fontFamily:MN,marginTop:1,color:sm?C.amb:C.tx}}>{game.spread_line||"\u2014"}</div></div>
             <div style={{flex:1,padding:"5px 10px",background:C.card,borderRadius:4,border:`1px solid ${tm?C.amb:C.bdr}`}}><div style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1}}>Total</div><div style={{fontSize:14,fontWeight:700,fontFamily:MN,marginTop:1,color:tm?C.amb:C.tx}}>{game.total_line||"\u2014"}</div></div>
-            <div style={{flex:"0 0 72px",padding:"5px 10px",background:sd>=15?C.ambB:C.card,borderRadius:4,border:`1px solid ${sd>=15?C.ambD:sd>=td?C.cyn+"55":C.bdr}`,textAlign:"center"}}><div style={{fontSize:8,color:sd>=td?C.cyn:C.txM,textTransform:"uppercase",letterSpacing:1}}>Spr Div</div><div style={{fontSize:20,fontWeight:800,fontFamily:MN,marginTop:0,lineHeight:1.1,color:sd>=15?C.amb:sd>=td?C.cyn:C.tx}}>{sd.toFixed(1)}<span style={{fontSize:11,fontWeight:600}}>%</span></div></div>
+            <div style={{flex:"0 0 72px",padding:"5px 10px",background:sd>=15?C.ambB:C.card,borderRadius:4,border:`1px solid ${sd>=15?C.ambD:sd>=td?C.cyn+"55":C.bdr}`,textAlign:"center"}}><div style={{fontSize:8,color:sd>=td?C.cyn:C.txM,textTransform:"uppercase",letterSpacing:1}}>{sL} Div</div><div style={{fontSize:20,fontWeight:800,fontFamily:MN,marginTop:0,lineHeight:1.1,color:sd>=15?C.amb:sd>=td?C.cyn:C.tx}}>{sd.toFixed(1)}<span style={{fontSize:11,fontWeight:600}}>%</span></div></div>
             <div style={{flex:"0 0 72px",padding:"5px 10px",background:td>=15?C.ambB:C.card,borderRadius:4,border:`1px solid ${td>=15?C.ambD:td>sd?C.pur+"55":C.bdr}`,textAlign:"center"}}><div style={{fontSize:8,color:td>sd?C.pur:C.txM,textTransform:"uppercase",letterSpacing:1}}>O/U Div</div><div style={{fontSize:20,fontWeight:800,fontFamily:MN,marginTop:0,lineHeight:1.1,color:td>=15?C.amb:td>sd?C.pur:C.tx}}>{td.toFixed(1)}<span style={{fontSize:11,fontWeight:600}}>%</span></div></div>
           </div>
         </div>
@@ -408,7 +416,7 @@
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:11,fontWeight:700,color:C.tx,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.g.away_team} @ {item.g.home_team}</div>
                 <div style={{display:"flex",gap:5,marginTop:3,alignItems:"center",flexWrap:"wrap"}}>
-                  <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,color:type==="spread"?C.cyn:C.pur}}>{type==="spread"?"Sharp SPR":"Sharp O/U"}</span>
+                  <span style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,color:type==="spread"?C.cyn:C.pur}}>{type==="spread"?("Sharp "+sprLabel(item.g.sport)):"Sharp O/U"}</span>
                   <span style={{fontSize:9,color:C.txM}}>{"→"}</span>
                   <span style={{fontSize:10,fontWeight:700,fontFamily:MN,color:C.tx}}>{lbl}</span>
                   <span style={{fontSize:9,color:C.txD,fontFamily:MN}}>(line {line})</span>
@@ -631,6 +639,7 @@
                 const sm=first&&NUM(selectedGame.spread_line)!==NUM(first.spread_line),tm=first&&NUM(selectedGame.total_line)!==NUM(first.total_line);
                 const gd=getGameDate(selectedGame),pred=evalPrediction(selectedGame,espn),done=espn?.done||espn?.sId==="3";
                 const lean=sharpLean(selectedGame);
+                const ml=isMLSport(selectedGame.sport), sL=sprLabel(selectedGame.sport), fL=spreadLabel(selectedGame.sport);
                 return(<div>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div>
                     <h2 style={{margin:0,fontSize:22,fontWeight:700}}>{selectedGame.away_team} <span style={{color:C.txM,fontWeight:400}}>@</span> {selectedGame.home_team}</h2>
@@ -640,25 +649,25 @@
                       {espn&&<StatusBadge e={espn}/>}{selSrcCount>1&&<span style={{fontSize:9,color:C.pur,fontWeight:600,background:C.purB,padding:"1px 6px",borderRadius:3}}>{selSrcCount} sources</span>}
                     </div></div></div>
                   <div style={{display:"flex",gap:10,marginTop:14,flexWrap:"wrap"}}>
-                    <LinePill v={selectedGame.spread_line} l="SPR" moved={sm} prev={first?.spread_line}/>
+                    <LinePill v={selectedGame.spread_line} l={sL} moved={sm} prev={first?.spread_line}/>
                     <LinePill v={selectedGame.total_line} l="O/U" moved={tm} prev={first?.total_line}/>
-                    {lean.sprLabel&&NUM(selectedGame.spread_bets_handle_divergence)>=5&&<div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:NUM(selectedGame.spread_bets_handle_divergence)>=15?C.ambB:C.card,borderRadius:6,border:`1px solid ${NUM(selectedGame.spread_bets_handle_divergence)>=15?C.ambD:C.bdr}`}}><span style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5}}>Sharp Spr</span><span style={{fontSize:14,fontWeight:700,fontFamily:MN,color:NUM(selectedGame.spread_bets_handle_divergence)>=15?C.amb:C.tx}}>{"\u2192"} {lean.sprLabel}</span></div>}
+                    {lean.sprLabel&&NUM(selectedGame.spread_bets_handle_divergence)>=5&&<div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:NUM(selectedGame.spread_bets_handle_divergence)>=15?C.ambB:C.card,borderRadius:6,border:`1px solid ${NUM(selectedGame.spread_bets_handle_divergence)>=15?C.ambD:C.bdr}`}}><span style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5}}>{"Sharp "+sL}</span><span style={{fontSize:14,fontWeight:700,fontFamily:MN,color:NUM(selectedGame.spread_bets_handle_divergence)>=15?C.amb:C.tx}}>{"\u2192"} {lean.sprLabel}</span></div>}
                     {lean.totLabel&&NUM(selectedGame.total_bets_handle_divergence)>=5&&<div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:NUM(selectedGame.total_bets_handle_divergence)>=15?C.ambB:C.card,borderRadius:6,border:`1px solid ${NUM(selectedGame.total_bets_handle_divergence)>=15?C.ambD:C.bdr}`}}><span style={{fontSize:9,color:C.pur,textTransform:"uppercase",letterSpacing:1.5}}>Sharp O/U</span><span style={{fontSize:14,fontWeight:700,fontFamily:MN,color:NUM(selectedGame.total_bets_handle_divergence)>=15?C.amb:C.tx}}>{"\u2192"} {lean.totLabel}</span></div>}
                   </div>
                   <ScoreBlock e={espn} spr={selectedGame.spread_line} tot={selectedGame.total_line} aw={selectedGame.away_team} hm={selectedGame.home_team} game={selectedGame}/>
                   {done&&(pred.spread||pred.total)&&(<div style={{marginTop:8,padding:"8px 12px",background:C.card,borderRadius:6,border:`1px solid ${C.bdr}`,display:"flex",gap:12,alignItems:"center"}}>
                     <span style={{fontSize:9,color:C.txM,fontWeight:700,textTransform:"uppercase",letterSpacing:1}}>Sharp Signal</span>
-                    {pred.spread&&<span style={{fontSize:11,color:pred.spread==="hit"?C.grn:C.red,fontWeight:600}}>Spread: {pred.spread==="hit"?"\u2714 Correct":"\u2718 Wrong"}</span>}
+                    {pred.spread&&<span style={{fontSize:11,color:pred.spread==="hit"?C.grn:C.red,fontWeight:600}}>{fL}: {pred.spread==="hit"?"\u2714 Correct":"\u2718 Wrong"}</span>}
                     {pred.total&&<span style={{fontSize:11,color:pred.total==="hit"?C.grn:C.red,fontWeight:600}}>Total: {pred.total==="hit"?"\u2714 Correct":"\u2718 Wrong"}</span>}
                   </div>)}
                   <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginTop:16,marginBottom:20}}>
-                    {(()=>{const sd=NUM(selectedGame.spread_bets_handle_divergence),td=NUM(selectedGame.total_bets_handle_divergence);return[{l:"Spread Div",v:sd,p:true,clr:sd>=td?C.cyn:null},{l:"Total Div",v:td,p:true,clr:td>sd?C.pur:null},{l:"Readings",v:selectedHistory.length,p:false},{l:"Line Moves",v:(sm?1:0)+(tm?1:0),p:false}];})().map(({l,v,p,clr})=>(
+                    {(()=>{const sd=NUM(selectedGame.spread_bets_handle_divergence),td=NUM(selectedGame.total_bets_handle_divergence);return[{l:fL+" Div",v:sd,p:true,clr:sd>=td?C.cyn:null},{l:"Total Div",v:td,p:true,clr:td>sd?C.pur:null},{l:"Readings",v:selectedHistory.length,p:false},{l:"Line Moves",v:(sm?1:0)+(tm?1:0),p:false}];})().map(({l,v,p,clr})=>(
                       <div key={l} style={{padding:"8px 12px",background:C.card,borderRadius:6,border:`1px solid ${p&&v>=15?C.ambD:clr?clr+"33":C.bdr}`}}>
                         <div style={{fontSize:9,color:clr||C.txM,textTransform:"uppercase",letterSpacing:1}}>{l}{p&&clr&&v>=15?" \u2605":""}</div>
                         <div style={{fontSize:20,fontWeight:700,fontFamily:MN,marginTop:2,color:p&&v>=15?C.amb:clr||C.tx}}>{p?`${v.toFixed(1)}%`:v}</div>
                       </div>))}
                   </div>
-                  {selSrcCount>=2&&<SourceCompare gameId={selectedGame.game_id} allData={filteredData}/>}
+                  {selSrcCount>=2&&<SourceCompare gameId={selectedGame.game_id} allData={filteredData} sport={selectedGame.sport}/>}
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:20,marginBottom:12}}>
                     <div style={{display:"flex",gap:14,fontSize:10}}><span><span style={{display:"inline-block",width:10,height:3,borderRadius:1,background:C.hdl,marginRight:4,verticalAlign:"middle"}}/>Handle</span><span><span style={{display:"inline-block",width:10,height:3,borderRadius:1,background:C.bet,marginRight:4,verticalAlign:"middle"}}/>Bets</span></div>
                     <div style={{display:"flex",gap:4}}>{[["spread","Spread"],["total","Total"],["ml","ML"]].map(([k,l])=><button key={k} style={btn(metric===k)} onClick={()=>setMetric(k)}>{l}</button>)}</div>
