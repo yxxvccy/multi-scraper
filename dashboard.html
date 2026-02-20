@@ -372,11 +372,17 @@
     /* ========== NEW: Summary Dashboard ========== */
     function SummaryTab({data,games,getESPN,latestByGameSrc}){
       const [sMin,setSMin]=useState(10),[tMin,setTMin]=useState(10);
+      const [sumSport,setSumSport]=useState("all");
       const btn=sel=>({padding:"4px 10px",fontSize:10,fontWeight:600,background:sel?C.cyn:"transparent",color:sel?C.bg:C.txM,border:`1px solid ${sel?C.cyn:C.bdr}`,borderRadius:4,cursor:"pointer"});
+      const availSports=useMemo(()=>{
+        const s=new Set();Object.values(latestByGameSrc).forEach(g=>{if(g.source==="vsin_dk")s.add(g.sport);});
+        return [...s].sort();
+      },[latestByGameSrc]);
       const results=useMemo(()=>{
         const out={sprHit:0,sprMiss:0,totHit:0,totMiss:0,sprGames:[],totGames:[]};
         Object.values(latestByGameSrc).forEach(g=>{
           if(g.source!=="vsin_dk")return;
+          if(sumSport!=="all"&&g.sport!==sumSport)return;
           const espn=getESPN(g);if(!espn||!(espn.done||espn.sId==="3"))return;
           const sd=NUM(g.spread_bets_handle_divergence),td=NUM(g.total_bets_handle_divergence);
           const pred=evalPrediction(g,espn),lean=sharpLean(g);
@@ -390,7 +396,7 @@
           }
         });
         return out;
-      },[latestByGameSrc,getESPN,sMin,tMin]);
+      },[latestByGameSrc,getESPN,sMin,tMin,sumSport]);
       const sprT=results.sprHit+results.sprMiss,totT=results.totHit+results.totMiss;
       const sprP=sprT?((results.sprHit/sprT)*100).toFixed(1):"--",totP=totT?((results.totHit/totT)*100).toFixed(1):"--";
       const allH=results.sprHit+results.totHit,allT=sprT+totT,allP=allT?((allH/allT)*100).toFixed(1):"--";
@@ -444,6 +450,10 @@
           <div style={{width:1,height:16,background:C.bdr,margin:"0 4px"}}/>
           <span style={{fontSize:9,color:C.pur,textTransform:"uppercase",letterSpacing:1.5}}>O/U Min Div</span>
           {[0,5,10,15,20,25,30,35,40].map(v=><button key={v} style={btn(tMin===v)} onClick={()=>setTMin(v)}>{v}%</button>)}
+          <div style={{width:1,height:16,background:C.bdr,margin:"0 4px"}}/>
+          <span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>Sport</span>
+          <button style={btn(sumSport==="all")} onClick={()=>setSumSport("all")}>All</button>
+          {availSports.map(s=><button key={s} style={btn(sumSport===s)} onClick={()=>setSumSport(s)}>{s.toUpperCase()}</button>)}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:24}}>
           <div style={{padding:"16px 20px",background:C.card,borderRadius:8,border:`1px solid ${C.cyn}44`}}>
