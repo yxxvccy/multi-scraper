@@ -56,7 +56,7 @@
 
     // Live data fetching from GitHub
     const GITHUB_RAW = "https://raw.githubusercontent.com/yxxvccy/multi-scraper/main/data";
-    const SCRAPE_SPORTS = ["cbb", "wcbb", "nba"];
+    const SCRAPE_SPORTS = ["cbb", "wcbb", "nba", "nfl", "nhl", "mlb", "epl", "ucl", "cfb", "cbase"];
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
     function getDatesToFetch() {
       const dates = [], now = new Date();
@@ -322,14 +322,14 @@
                   <span style={{fontSize:8,color:C.txM,fontWeight:600}}>SPR</span>
                   <span style={{fontFamily:MN}}>{NUM(first.spread_line)>NUM(game.spread_line)?"\u25BC":"\u25B2"}</span>
                   <span style={{fontFamily:MN}}>{first.spread_line}</span>
-                  <span style={{color:C.txM}}>\u2192</span>
+                  <span style={{color:C.txM}}>{"\u2192"}</span>
                   <span style={{fontFamily:MN}}>{game.spread_line}</span>
                 </span>}
                 {tm&&<span style={{display:"inline-flex",alignItems:"center",gap:3,color:C.amb,fontWeight:700,fontSize:9,background:C.ambB,border:`1px solid ${C.ambD}`,borderRadius:3,padding:"1px 6px"}}>
                   <span style={{fontSize:8,color:C.txM,fontWeight:600}}>O/U</span>
                   <span style={{fontFamily:MN}}>{NUM(first.total_line)>NUM(game.total_line)?"\u25BC":"\u25B2"}</span>
                   <span style={{fontFamily:MN}}>{first.total_line}</span>
-                  <span style={{color:C.txM}}>\u2192</span>
+                  <span style={{color:C.txM}}>{"\u2192"}</span>
                   <span style={{fontFamily:MN}}>{game.total_line}</span>
                 </span>}
                 {espn&&<StatusBadge e={espn}/>}
