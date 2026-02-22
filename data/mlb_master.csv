@@ -68,3 +68,5 @@ timestamp,source,book,sport,game_date,away_team,home_team,spread_line,spread_awa
 2026-02-22T05:20:30.098153,sbd,multi_book_consensus,mlb,mlb_20260222_world_series_lcs,,,World Series,LCS,16.0,51.0,69.0,49.0,31.0,99.0,78.0,81.0,51.0,73.0,60.0,40.0,30.0,70.0,38.0,27.0,True,True,1,,,,,,,,,,,,
 2026-02-22T07:34:31.716459,dk_network,draftkings,mlb,mlb_20260222_den_nuggets_gs_warriorsopens_in_a_new_tab,,,DEN Nuggets,GS Warriorsopens in a new tab,2.0,,,,,40.0,,,,,,,,,,,,,1,,,,,,,,,,,,
 2026-02-22T07:34:40.450962,sbd,multi_book_consensus,mlb,mlb_20260222_world_series_lcs,,,World Series,LCS,16.0,51.0,69.0,49.0,31.0,99.0,78.0,81.0,51.0,73.0,60.0,40.0,30.0,70.0,38.0,27.0,True,True,1,,,,,,,,,,,,
+2026-02-22T08:07:17.991439,dk_network,draftkings,mlb,mlb_20260222_den_nuggets_gs_warriorsopens_in_a_new_tab,,,DEN Nuggets,GS Warriorsopens in a new tab,2.0,,,,,40.0,,,,,,,,,,,,,1,,,,,,,,,,,,
+2026-02-22T08:07:26.896747,sbd,multi_book_consensus,mlb,mlb_20260222_world_series_lcs,,,World Series,LCS,16.0,51.0,69.0,49.0,31.0,99.0,78.0,81.0,51.0,73.0,60.0,40.0,30.0,70.0,38.0,27.0,True,True,1,,,,,,,,,,,,
