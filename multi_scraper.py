@@ -239,7 +239,7 @@ SOURCES = {
 # ============================================================
 
 DATA_DIR = Path("data")
-for d in ["snapshots", "closing", "raw_html", "timeseries"]:
+for d in ["closing", "raw_html", "timeseries"]:
     (DATA_DIR / d).mkdir(parents=True, exist_ok=True)
 
 COLUMNS = [
@@ -1967,12 +1967,6 @@ def scrape_source(source_key: str, sport: str, driver) -> list[dict]:
         else:
             html = fetch_page(url, driver)
 
-        # Save raw HTML for debugging
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        raw_path = DATA_DIR / "raw_html" / f"{source_key}_{sport}_{ts}.html"
-        with open(raw_path, "w", encoding="utf-8") as f:
-            f.write(html)
-
         games = parse_splits_page(html, source_key, sport)
         print(f"  [{source_key}] Parsed {len(games)} games")
 
@@ -1984,8 +1978,13 @@ def scrape_source(source_key: str, sport: str, driver) -> list[dict]:
             if not games:
                 print(f"  [{source_key}] All games rejected by contamination filter.")
 
-        # Debug: if still 0 games, report what we found in the HTML
+        # Save raw HTML ONLY on parse failure (0 games) for debugging
         if not games:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            raw_path = DATA_DIR / "raw_html" / f"{source_key}_{sport}_{ts}.html"
+            with open(raw_path, "w", encoding="utf-8") as f:
+                f.write(html)
+
             soup = BeautifulSoup(html, "html.parser")
             tables = soup.find_all("table")
             h5s = [h.get_text(strip=True)[:60] for h in soup.find_all("h5")]
@@ -2030,7 +2029,11 @@ def scrape_all(sport: str, sources: list[str] | None = None, driver=None) -> tup
     if own_driver:
         driver = get_driver()
 
-    target_sources = sources or list(SOURCES.keys())
+    # Default to VSiN sources only (DK Network and SBD removed for efficiency —
+    # DK Network is redundant with vsin_dk, SBD often lacks handle data).
+    # Re-enable with --source dk_network or --source sbd if needed.
+    DEFAULT_SOURCES = ["vsin_dk", "vsin_circa"]
+    target_sources = sources or DEFAULT_SOURCES
     all_games = []
 
     info = SPORT_INFO.get(sport, {})
@@ -2171,8 +2174,13 @@ def _merge_pending_files(path: Path):
 
 
 def save_data(games: list[dict], sport: str, is_closing: bool = False):
-    """Save scraped data to snapshot, timeseries, and master files.
-    Handles file locks gracefully â€” never blocks the scrape cycle."""
+    """Save scraped data to timeseries and (optionally) closing files.
+
+    Phase 1 simplification: removed per-scrape snapshot files and master
+    file append. Timeseries is the single source of truth for intraday data.
+    Master dataset can be reconstructed from timeseries files (and will be
+    replaced by Parquet archive in Phase 3).
+    """
     if not games:
         print("  No data to save.")
         return
@@ -2187,13 +2195,7 @@ def save_data(games: list[dict], sport: str, is_closing: bool = False):
             df[col] = ""
     df = df[COLUMNS]
 
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     today = datetime.now().strftime("%Y%m%d")
-
-    # Snapshot (point-in-time, one file per scrape â€” always a new file, no lock issues)
-    snap_path = DATA_DIR / "snapshots" / f"{sport}_{ts}.csv"
-    df.to_csv(snap_path, index=False)
-    print(f"  Snapshot: {snap_path}")
 
     # Closing
     if is_closing:
@@ -2209,15 +2211,6 @@ def save_data(games: list[dict], sport: str, is_closing: bool = False):
     else:
         _safe_csv_write(df, ts_path, mode="w", header=True)
     print(f"  Timeseries: {ts_path} (+{len(df)} rows)")
-
-    # Master (append â€” full historical record)
-    master_path = DATA_DIR / f"{sport}_master.csv"
-    _merge_pending_files(master_path)
-    if master_path.exists():
-        _safe_csv_write(df, master_path, mode="a", header=False)
-    else:
-        _safe_csv_write(df, master_path, mode="w", header=True)
-    print(f"  Master:  {master_path}")
 
 
 # ============================================================
@@ -2640,11 +2633,25 @@ def run_gameday(sports: list[str], sources: list[str] | None,
 
         return soonest
 
+    _scrape_count = 0
+    _RECYCLE_EVERY = 20  # Recycle browser every N scrapes to prevent memory leaks
+
     def do_scrape(reason: str = "scheduled"):
-        nonlocal driver
+        nonlocal driver, _scrape_count
         now = now_tz()
         print(f"\n  [{now:%H:%M:%S}] Running scrape ({reason}, "
               f"interval: {current_interval(now)} min)...")
+
+        _scrape_count += 1
+
+        # Proactive driver recycling to prevent stale browser / memory leaks
+        if _scrape_count % _RECYCLE_EVERY == 0:
+            print(f"  [maintenance] Recycling browser (scrape #{_scrape_count})...")
+            try:
+                driver.quit()
+            except Exception:
+                pass
+            driver = get_driver()
 
         for sport in sports:
             try:
@@ -2654,7 +2661,13 @@ def run_gameday(sports: list[str], sources: list[str] | None,
                     process_closing_lines(games, sport)
             except Exception as e:
                 print(f"  [{sport}] Error during scrape/save: {e}")
-                print(f"  [{sport}] Continuing to next sport...")
+                # Restart driver on failure to prevent cascading errors
+                print(f"  [{sport}] Restarting browser and continuing...")
+                try:
+                    driver.quit()
+                except Exception:
+                    pass
+                driver = get_driver()
 
     # --- Main loop ---
     try:
