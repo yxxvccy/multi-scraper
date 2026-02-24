@@ -2,8 +2,16 @@ name: Scheduled Scrape
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    # Primary triggers: every 30 min at :00 and :30
+    - cron: '0,30 * * * *'
+    # Backup triggers: :15 and :45 to fill gaps when GitHub drops primary
+    - cron: '15,45 * * * *'
   workflow_dispatch:
+
+# Prevent overlapping runs from causing git conflicts
+concurrency:
+  group: scrape
+  cancel-in-progress: false
 
 jobs:
   scrape:
@@ -23,7 +31,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run scraper
-        run: python multi_scraper.py --batch cbb wcbb cbase chockey mlb epl ucl nba --once
+        run: python multi_scraper.py --batch cbb wcbb cbase chockey mlb epl ucl nba --once --auto-close 10
 
       - name: Commit and push new data
         run: |
