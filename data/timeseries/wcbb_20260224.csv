@@ -15,3 +15,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-02-24T19:34:25.326238,vsin_dk,draftkings,wcbb,wcbb_20260224_utah_colorado,Feb 24,,Utah,Colorado,8.5,13.0,87.0,10.0,90.0,128.5,80.0,20.0,54.0,46.0,6.0,94.0,55.0,45.0,3.0,26.0,False,True,1,,,,,,,,,,,,
 2026-02-24T19:35:09.003625,vsin_circa,circa,wcbb,wcbb_20260224_houston_arizona,Feb 24,,Houston,Arizona,10.5,36.0,64.0,66.0,34.0,139.5,21.0,79.0,23.0,77.0,5.0,95.0,1.0,99.0,30.0,2.0,True,False,1,,,,,,,,,,,,
 2026-02-24T19:35:09.003625,vsin_circa,circa,wcbb,wcbb_20260224_utah_colorado,Feb 24,,Utah,Colorado,8.5,13.0,87.0,10.0,90.0,128.5,80.0,20.0,54.0,46.0,6.0,94.0,55.0,45.0,3.0,26.0,False,True,1,,,,,,,,,,,,
+2026-02-24T21:09:19.721282,vsin_dk,draftkings,wcbb,wcbb_20260224_houston_arizona,Feb 24,,Houston,Arizona,10.5,30.0,70.0,45.0,55.0,139.5,20.0,80.0,3.0,97.0,5.0,95.0,1.0,99.0,15.0,17.0,True,True,1,,,,,,,,,,,,
+2026-02-24T21:09:19.721282,vsin_dk,draftkings,wcbb,wcbb_20260224_utah_colorado,Feb 24,,Utah,Colorado,8.5,17.0,83.0,10.0,90.0,128.5,74.0,26.0,84.0,16.0,7.0,93.0,55.0,45.0,7.0,10.0,False,False,1,,,,,,,,,,,,
+2026-02-24T21:09:47.446610,vsin_circa,circa,wcbb,wcbb_20260224_houston_arizona,Feb 24,,Houston,Arizona,10.5,30.0,70.0,45.0,55.0,139.5,20.0,80.0,3.0,97.0,5.0,95.0,1.0,99.0,15.0,17.0,True,True,1,,,,,,,,,,,,
+2026-02-24T21:09:47.446610,vsin_circa,circa,wcbb,wcbb_20260224_utah_colorado,Feb 24,,Utah,Colorado,8.5,17.0,83.0,10.0,90.0,128.5,74.0,26.0,84.0,16.0,7.0,93.0,55.0,45.0,7.0,10.0,False,False,1,,,,,,,,,,,,
