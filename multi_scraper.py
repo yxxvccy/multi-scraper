@@ -2072,14 +2072,22 @@ def scrape_all(sport: str, sources: list[str] | None = None, driver=None) -> tup
 # MULTI-SPORT BATCH SCRAPING
 # ============================================================
 
-def scrape_batch(sports: list[str], sources: list[str] | None = None):
-    """Scrape multiple sports in one session (shares a single browser)."""
+def scrape_batch(sports: list[str], sources: list[str] | None = None,
+                 auto_close_window: int = 0):
+    """Scrape multiple sports in one session (shares a single browser).
+
+    If auto_close_window > 0, each sport's scrape is checked against ESPN
+    schedules. Games starting within that many minutes get their current
+    data saved as closing-line snapshots to data/closing/.
+    """
     driver = get_driver()
     all_results = {}
 
     print(f"\n{'='*60}")
     print(f"  BATCH SCRAPE: {len(sports)} sports")
     print(f"  Sports: {', '.join(SPORT_INFO[s]['display'] for s in sports)}")
+    if auto_close_window > 0:
+        print(f"  Auto-close: {auto_close_window} min window")
     print(f"  {datetime.now():%Y-%m-%d %H:%M:%S}")
     print(f"{'='*60}")
 
@@ -2088,6 +2096,10 @@ def scrape_batch(sports: list[str], sources: list[str] | None = None):
         games, driver = scrape_all(sport, sources, driver=driver)
         save_data(games, sport)
         all_results[sport] = len(games)
+
+        # Check for imminent games and save closing lines
+        if auto_close_window > 0 and games:
+            auto_close_check(games, sport, window_minutes=auto_close_window)
 
     try:
         driver.quit()
@@ -2211,6 +2223,88 @@ def save_data(games: list[dict], sport: str, is_closing: bool = False):
     else:
         _safe_csv_write(df, ts_path, mode="w", header=True)
     print(f"  Timeseries: {ts_path} (+{len(df)} rows)")
+
+
+def auto_close_check(games: list[dict], sport: str, window_minutes: int = 10):
+    """Check if any scraped games are about to start and save closing lines.
+
+    This brings the closing-line logic from run_gameday() into --once mode.
+    For each game, we look up the ESPN start time. If the game starts within
+    `window_minutes`, we save the current scrape as the closing snapshot.
+
+    Designed to run after every --once scrape so that whichever cron run
+    happens to land near tip-off automatically captures closing lines.
+    """
+    if not games or window_minutes <= 0:
+        return
+
+    try:
+        from zoneinfo import ZoneInfo
+    except ImportError:
+        from backports.zoneinfo import ZoneInfo
+
+    utc = ZoneInfo("UTC")
+    now_utc = datetime.now(utc)
+    today = datetime.now().strftime("%Y%m%d")
+
+    closing_games = []
+
+    # Load existing closing file to avoid duplicating games already captured
+    close_path = DATA_DIR / "closing" / f"{sport}_{today}.csv"
+    already_saved = set()
+    if close_path.exists():
+        try:
+            existing = pd.read_csv(close_path)
+            for _, row in existing.iterrows():
+                already_saved.add((
+                    str(row.get("away_team", "")).strip(),
+                    str(row.get("home_team", "")).strip(),
+                    str(row.get("source", "")).strip(),
+                ))
+        except Exception:
+            pass
+
+    for game in games:
+        away = str(game.get("away_team", "")).strip()
+        home = str(game.get("home_team", "")).strip()
+        source = str(game.get("source", "")).strip()
+
+        if (away, home, source) in already_saved:
+            continue
+
+        # Look up start time from ESPN
+        gid = str(game.get("game_id", ""))
+        m = re.search(r'_(\d{8})_', gid)
+        date_str = m.group(1) if m else today
+
+        start_utc = _find_espn_start_utc(sport, away, home, date_str)
+        if not start_utc:
+            continue
+
+        if start_utc.tzinfo is None:
+            start_utc = start_utc.replace(tzinfo=utc)
+
+        minutes_until = (start_utc - now_utc).total_seconds() / 60
+
+        if 0 < minutes_until <= window_minutes:
+            closing_games.append(game)
+            print(f"  [auto-close] {away} @ {home} ({source}) "
+                  f"starts in {minutes_until:.0f} min -- capturing closing line")
+
+    if closing_games:
+        save_data(closing_games, sport, is_closing=True)
+        print(f"  [auto-close] Saved {len(closing_games)} closing line(s) for {sport}")
+    else:
+        # Only log if ESPN had games today (avoid noise for off-days)
+        schedule = _fetch_espn_schedule(sport, today)
+        if schedule:
+            upcoming = sum(1 for g in schedule
+                          if g.get("start_utc") and
+                          g["start_utc"].tzinfo and
+                          (g["start_utc"] - now_utc).total_seconds() / 60 > 0)
+            if upcoming > 0:
+                print(f"  [auto-close] {sport}: {upcoming} games remaining today, "
+                      f"none within {window_minutes} min window")
 
 
 # ============================================================
@@ -2860,6 +2954,8 @@ Examples:
                         help="Timezone for schedule (default: US/Eastern)")
     parser.add_argument("--analyze", metavar="SPORT", nargs="?", const="nba",
                         help="Analyze collected data for a sport")
+    parser.add_argument("--auto-close", type=int, default=0, metavar="MINUTES",
+                        help="Auto-save closing lines for games starting within N minutes (use with --once)")
     parser.add_argument("--find-api", action="store_true",
                         help="Generate API discovery script")
     parser.add_argument("--list-sports", action="store_true",
@@ -2925,8 +3021,10 @@ Examples:
         if len(sports) == 1:
             games, _ = scrape_all(sports[0], sources)
             save_data(games, sports[0], is_closing=args.close)
+            if args.auto_close > 0 and games:
+                auto_close_check(games, sports[0], window_minutes=args.auto_close)
         else:
-            scrape_batch(sports, sources)
+            scrape_batch(sports, sources, auto_close_window=args.auto_close)
 
 
 if __name__ == "__main__":
