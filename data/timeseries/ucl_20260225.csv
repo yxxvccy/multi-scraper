@@ -64,3 +64,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-02-25T18:07:03.338370,vsin_dk,draftkings,ucl,ucl_20260225_galatasaray_juventus,,,Galatasaray,Juventus,500.0,43.0,57.0,74.0,26.0,,,,,,,,,,31.0,,True,,1,,,,,,,,,,,,
 2026-02-25T18:07:03.338370,vsin_dk,draftkings,ucl,ucl_20260225_benfica_real_madrid,,,Benfica,Real Madrid,370.0,12.0,88.0,14.0,86.0,,,,,,,,,,2.0,,False,,1,,,,,,,,,,,,
 2026-02-25T18:07:03.338370,vsin_dk,draftkings,ucl,ucl_20260225_monaco_paris_stgermain,,,Monaco,Paris St-Germain,800.0,6.0,94.0,17.0,83.0,,,,,,,,,,11.0,,False,,1,,,,,,,,,,,,
+2026-02-25T18:22:10.487755,vsin_dk,draftkings,ucl,ucl_20260225_dortmund_atalanta,,,Dortmund,Atalanta,205.0,67.0,33.0,67.0,33.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-02-25T18:22:10.487755,vsin_dk,draftkings,ucl,ucl_20260225_galatasaray_juventus,,,Galatasaray,Juventus,500.0,43.0,57.0,74.0,26.0,,,,,,,,,,31.0,,True,,1,,,,,,,,,,,,
+2026-02-25T18:22:10.487755,vsin_dk,draftkings,ucl,ucl_20260225_benfica_real_madrid,,,Benfica,Real Madrid,370.0,12.0,88.0,14.0,86.0,,,,,,,,,,2.0,,False,,1,,,,,,,,,,,,
+2026-02-25T18:22:10.487755,vsin_dk,draftkings,ucl,ucl_20260225_monaco_paris_stgermain,,,Monaco,Paris St-Germain,800.0,6.0,94.0,17.0,83.0,,,,,,,,,,11.0,,False,,1,,,,,,,,,,,,
