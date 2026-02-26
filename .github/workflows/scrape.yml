@@ -31,7 +31,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run scraper
-        run: python multi_scraper.py --batch cbb wcbb cbase chockey mlb epl ucl nba --once --auto-close 10
+        run: python multi_scraper.py --batch cbb wcbb cbase chockey mlb epl ucl nba --once --auto-close 30
 
       - name: Commit and push new data
         run: |
