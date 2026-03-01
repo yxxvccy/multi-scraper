@@ -47,6 +47,30 @@ try:
 except ImportError:
     sys.exit("Install: pip install pandas beautifulsoup4 selenium schedule")
 
+# ============================================================
+# TIMEZONE CONFIGURATION
+# ============================================================
+# All date logic uses Eastern Time by default. This ensures file names,
+# game_ids, and closing-line timestamps align with the US sports calendar
+# regardless of where the scraper runs (e.g. UTC GitHub Actions runners).
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
+DEFAULT_TZ = ZoneInfo("US/Eastern")
+
+
+def now_eastern() -> datetime:
+    """Return the current time in the configured timezone (US/Eastern)."""
+    return datetime.now(DEFAULT_TZ)
+
+
+def today_str() -> str:
+    """Return today's date as YYYYMMDD in Eastern Time."""
+    return now_eastern().strftime("%Y%m%d")
+
 
 # ============================================================
 # SPORT DEFINITIONS
@@ -545,6 +569,9 @@ def _vsin_ensure_tab(driver, sport: str, view_code: str):
                   "w. college basketball", "ncaa women", "wbb",
                   "women's college", "w college basketball"],
         "cbase": ["baseball", "cbase", "college baseball", "ncaa baseball"],
+        "chockey": ["hockey", "chockey", "college hockey", "ncaa hockey",
+                     "men's college hockey", "m. college hockey", "ice hockey",
+                     "college ice hockey"],
     }
     target_texts = tab_labels.get(view_code, [view_code])
 
@@ -846,7 +873,7 @@ def fetch_sbd(url: str, driver, wait_seconds: int = 6) -> str:
 def parse_vsin(html: str, source_key: str, sport: str) -> list[dict]:
     """Parse VSiN betting splits from their freezetable format."""
     soup = BeautifulSoup(html, "html.parser")
-    now = datetime.now().isoformat()
+    now = now_eastern().isoformat()
     src = SOURCES[source_key]
     games = []
 
@@ -1027,7 +1054,7 @@ def parse_generic(html: str, source_key: str, sport: str) -> list[dict]:
     game containers and extract teams + percentages.
     """
     soup = BeautifulSoup(html, "html.parser")
-    now = datetime.now().isoformat()
+    now = now_eastern().isoformat()
     src = SOURCES[source_key]
     games = []
 
@@ -1143,7 +1170,7 @@ def extract_game_generic(el, source_key: str, sport: str, timestamp: str) -> dic
 def parse_dk_network(html: str, source_key: str, sport: str) -> list[dict]:
     """Parse DK Network betting splits from their card-based layout."""
     soup = BeautifulSoup(html, "html.parser")
-    now = datetime.now().isoformat()
+    now = now_eastern().isoformat()
     src = SOURCES[source_key]
     games = []
 
@@ -1339,7 +1366,7 @@ def _parse_dk_network_generic(soup, source_key: str, sport: str, timestamp: str)
 def parse_sbd(html: str, source_key: str, sport: str) -> list[dict]:
     """Parse SportsBettingDime betting trends page."""
     soup = BeautifulSoup(html, "html.parser")
-    now = datetime.now().isoformat()
+    now = now_eastern().isoformat()
     src = SOURCES[source_key]
     games = []
     seen = set()
@@ -1536,7 +1563,7 @@ def make_game_id(sport: str, game_date: str, away_team: str, home_team: str) -> 
 
     # Normalize game_date to YYYYMMDD
     date_str = ""
-    today = datetime.now()
+    today = now_eastern()
     year = str(today.year)
 
     if game_date:
@@ -1856,6 +1883,7 @@ def _match_team_to_schedule(scraped_name: str, schedule_teams: set[str]) -> bool
 _CONTAMINATION_MAP = {
     "wcbb": "cbb",
     "cbase": "cbb",
+    "chockey": "nhl",
 }
 
 
@@ -1876,7 +1904,7 @@ def check_contamination(sport: str, games: list[dict], source_key: str = "") -> 
     if not games:
         return games
 
-    today = datetime.now().strftime("%Y%m%d")
+    today = today_str()
 
     # Fetch both schedules
     correct_teams = _fetch_espn_teams(sport, today)
@@ -1980,7 +2008,7 @@ def scrape_source(source_key: str, sport: str, driver) -> list[dict]:
 
         # Save raw HTML ONLY on parse failure (0 games) for debugging
         if not games:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            ts = now_eastern().strftime("%Y%m%d_%H%M%S")
             raw_path = DATA_DIR / "raw_html" / f"{source_key}_{sport}_{ts}.html"
             with open(raw_path, "w", encoding="utf-8") as f:
                 f.write(html)
@@ -2041,7 +2069,7 @@ def scrape_all(sport: str, sources: list[str] | None = None, driver=None) -> tup
 
     print(f"\n{'='*60}")
     print(f"  Scraping {display} from {len(target_sources)} sources")
-    print(f"  {datetime.now():%Y-%m-%d %H:%M:%S}")
+    print(f"  {now_eastern():%Y-%m-%d %H:%M:%S}")
     print(f"{'='*60}")
 
     for src_key in target_sources:
@@ -2088,7 +2116,7 @@ def scrape_batch(sports: list[str], sources: list[str] | None = None,
     print(f"  Sports: {', '.join(SPORT_INFO[s]['display'] for s in sports)}")
     if auto_close_window > 0:
         print(f"  Auto-close: {auto_close_window} min window")
-    print(f"  {datetime.now():%Y-%m-%d %H:%M:%S}")
+    print(f"  {now_eastern():%Y-%m-%d %H:%M:%S}")
     print(f"{'='*60}")
 
     for sport in sports:
@@ -2137,7 +2165,7 @@ def _safe_csv_write(df: pd.DataFrame, path: Path, mode: str = "w",
         pass
 
     # File is locked â€” write to temp, then retry
-    pending_path = path.with_suffix(f".pending_{datetime.now():%H%M%S}.csv")
+    pending_path = path.with_suffix(f".pending_{now_eastern():%H%M%S}.csv")
     df.to_csv(pending_path, index=False)
 
     for attempt in range(1, max_retries + 1):
@@ -2207,7 +2235,7 @@ def save_data(games: list[dict], sport: str, is_closing: bool = False):
             df[col] = ""
     df = df[COLUMNS]
 
-    today = datetime.now().strftime("%Y%m%d")
+    today = today_str()
 
     # Closing
     if is_closing:
@@ -2245,7 +2273,7 @@ def auto_close_check(games: list[dict], sport: str, window_minutes: int = 10):
 
     utc = ZoneInfo("UTC")
     now_utc = datetime.now(utc)
-    today = datetime.now().strftime("%Y%m%d")
+    today = today_str()
 
     closing_games = []
 
