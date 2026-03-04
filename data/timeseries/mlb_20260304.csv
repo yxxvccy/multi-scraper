@@ -10,3 +10,4 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-04T04:05:58.410797-05:00,vsin_dk,draftkings,mlb,mlb_20260325_new_york_yankees_san_francisco_giants,Mar 25,,New York Yankees,San Francisco Giants,-117.0,79.0,21.0,78.0,22.0,,,,,,,,,,1.0,,False,,1,,,,,,,,,,,,
 2026-03-04T04:35:49.604793-05:00,vsin_dk,draftkings,mlb,mlb_20260325_new_york_yankees_san_francisco_giants,Mar 25,,New York Yankees,San Francisco Giants,-117.0,79.0,21.0,78.0,22.0,,,,,,,,,,1.0,,False,,1,,,,,,,,,,,,
 2026-03-04T05:05:27.575000-05:00,vsin_dk,draftkings,mlb,mlb_20260325_new_york_yankees_san_francisco_giants,Mar 25,,New York Yankees,San Francisco Giants,-117.0,80.0,20.0,78.0,22.0,,,,,,,,,,2.0,,False,,1,,,,,,,,,,,,
+2026-03-04T05:35:51.640587-05:00,vsin_dk,draftkings,mlb,mlb_20260325_new_york_yankees_san_francisco_giants,Mar 25,,New York Yankees,San Francisco Giants,-117.0,80.0,20.0,81.0,19.0,,,,,,,,,,1.0,,False,,1,,,,,,,,,,,,
