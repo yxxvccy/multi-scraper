@@ -14,3 +14,8 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-12T09:03:48.443323-04:00,vsin_dk,draftkings,cbase,cbase_20260312_morehead_state_western_carolina,Mar 12,,Morehead State,Western Carolina,220.0,7.0,93.0,38.0,62.0,,,,,,,,,,31.0,,True,,1,,,,,,,,,,,,
 2026-03-12T09:03:48.443323-04:00,vsin_dk,draftkings,cbase,cbase_20260312_georgia_tech_clemson,Mar 12,,Georgia Tech,Clemson,-180.0,68.0,32.0,42.0,58.0,,,,,,,,,,26.0,,True,,1,,,,,,,,,,,,
 2026-03-12T09:03:48.443323-04:00,vsin_dk,draftkings,cbase,cbase_20260312_butler_wichita_state,Mar 12,,Butler,Wichita State,450.0,3.0,97.0,3.0,97.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-03-12T09:33:45.388632-04:00,vsin_dk,draftkings,cbase,cbase_20260312_illinois_state_western_illinois,Mar 12,,Illinois State,Western Illinois,-360.0,95.0,5.0,96.0,4.0,,,,,,,,,,1.0,,False,,1,,,,,,,,,,,,
+2026-03-12T09:33:45.388632-04:00,vsin_dk,draftkings,cbase,cbase_20260312_cincinnati_byu,Mar 12,,Cincinnati,BYU,-270.0,87.0,13.0,89.0,11.0,,,,,,,,,,2.0,,False,,1,,,,,,,,,,,,
+2026-03-12T09:33:45.388632-04:00,vsin_dk,draftkings,cbase,cbase_20260312_morehead_state_western_carolina,Mar 12,,Morehead State,Western Carolina,220.0,6.0,94.0,36.0,64.0,,,,,,,,,,30.0,,True,,1,,,,,,,,,,,,
+2026-03-12T09:33:45.388632-04:00,vsin_dk,draftkings,cbase,cbase_20260312_georgia_tech_clemson,Mar 12,,Georgia Tech,Clemson,-180.0,68.0,32.0,41.0,59.0,,,,,,,,,,27.0,,True,,1,,,,,,,,,,,,
+2026-03-12T09:33:45.388632-04:00,vsin_dk,draftkings,cbase,cbase_20260312_butler_wichita_state,Mar 12,,Butler,Wichita State,450.0,3.0,97.0,3.0,97.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
