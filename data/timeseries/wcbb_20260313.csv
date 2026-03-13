@@ -70,3 +70,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-13T15:02:28.202779-04:00,vsin_dk,draftkings,wcbb,wcbb_20260313_maine_vermont,Mar 13,,Maine,Vermont,9.5,53.0,47.0,76.0,24.0,111.5,36.0,64.0,15.0,85.0,7.0,93.0,27.0,73.0,23.0,21.0,True,True,1,,,,,,,,,,,,
 2026-03-13T15:03:13.068045-04:00,vsin_circa,circa,wcbb,wcbb_20260313_brown_princeton,Mar 13,,Brown,Princeton,11.5,4.0,96.0,2.0,98.0,122.5,33.0,67.0,54.0,46.0,4.0,96.0,6.0,94.0,2.0,21.0,False,True,1,,,,,,,,,,,,
 2026-03-13T15:03:13.068045-04:00,vsin_circa,circa,wcbb,wcbb_20260313_maine_vermont,Mar 13,,Maine,Vermont,9.5,54.0,46.0,76.0,24.0,111.5,36.0,64.0,15.0,85.0,7.0,93.0,27.0,73.0,22.0,21.0,True,True,1,,,,,,,,,,,,
+2026-03-13T15:32:21.724116-04:00,vsin_dk,draftkings,wcbb,wcbb_20260313_brown_princeton,Mar 13,,Brown,Princeton,11.5,4.0,96.0,2.0,98.0,122.5,33.0,67.0,51.0,49.0,4.0,96.0,13.0,87.0,2.0,18.0,False,True,1,,,,,,,,,,,,
+2026-03-13T15:32:21.724116-04:00,vsin_dk,draftkings,wcbb,wcbb_20260313_maine_vermont,Mar 13,,Maine,Vermont,9.5,51.0,49.0,72.0,28.0,111.5,38.0,62.0,18.0,82.0,7.0,93.0,37.0,63.0,21.0,20.0,True,True,1,,,,,,,,,,,,
+2026-03-13T15:33:07.573251-04:00,vsin_circa,circa,wcbb,wcbb_20260313_brown_princeton,Mar 13,,Brown,Princeton,11.5,4.0,96.0,2.0,98.0,122.5,33.0,67.0,51.0,49.0,4.0,96.0,14.0,86.0,2.0,18.0,False,True,1,,,,,,,,,,,,
+2026-03-13T15:33:07.573251-04:00,vsin_circa,circa,wcbb,wcbb_20260313_maine_vermont,Mar 13,,Maine,Vermont,9.5,49.0,51.0,73.0,27.0,111.5,39.0,61.0,18.0,82.0,8.0,92.0,39.0,61.0,24.0,21.0,True,True,1,,,,,,,,,,,,
