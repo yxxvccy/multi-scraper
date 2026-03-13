@@ -34,3 +34,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-13T07:48:02.451358-04:00,vsin_dk,draftkings,wcbb,wcbb_20260312_stephen_f_austin_mcneese,Mar 12,,Stephen F. Austin,McNeese,6.5,14.0,86.0,2.0,98.0,133.5,24.0,76.0,21.0,79.0,6.0,94.0,4.0,96.0,12.0,3.0,False,False,1,,,,,,,,,,,,
 2026-03-13T07:48:46.845399-04:00,vsin_circa,circa,wcbb,wcbb_20260312_stephen_f_austin_mcneese,Mar 12,,Stephen F. Austin,McNeese,6.5,14.0,86.0,2.0,98.0,133.5,24.0,76.0,21.0,79.0,6.0,94.0,4.0,96.0,12.0,3.0,False,False,1,,,,,,,,,,,,
 2026-03-13T08:02:34.489945-04:00,vsin_dk,draftkings,wcbb,wcbb_20260312_stephen_f_austin_mcneese,Mar 12,,Stephen F. Austin,McNeese,6.5,14.0,86.0,2.0,98.0,133.5,24.0,76.0,21.0,79.0,6.0,94.0,4.0,96.0,12.0,3.0,False,False,1,,,,,,,,,,,,
+2026-03-13T11:02:32.198284-04:00,vsin_dk,draftkings,wcbb,wcbb_20260313_brown_princeton,Mar 13,,Brown,Princeton,11.5,,100.0,,100.0,122.5,100.0,,100.0,,,100.0,,100.0,0.0,0.0,False,False,1,,,,,,,,,,,,
+2026-03-13T11:02:32.198284-04:00,vsin_dk,draftkings,wcbb,wcbb_20260313_maine_vermont,Mar 13,,Maine,Vermont,9.5,100.0,,100.0,,113.5,100.0,,100.0,,,100.0,,100.0,,0.0,,False,1,,,,,,,,,,,,
+2026-03-13T11:03:17.631890-04:00,vsin_circa,circa,wcbb,wcbb_20260313_brown_princeton,Mar 13,,Brown,Princeton,11.5,,100.0,,100.0,122.5,100.0,,100.0,,,100.0,,100.0,0.0,0.0,False,False,1,,,,,,,,,,,,
+2026-03-13T11:03:17.631890-04:00,vsin_circa,circa,wcbb,wcbb_20260313_maine_vermont,Mar 13,,Maine,Vermont,9.5,67.0,33.0,100.0,,113.5,100.0,,100.0,,25.0,75.0,99.0,1.0,,0.0,,False,1,,,,,,,,,,,,
