@@ -295,3 +295,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-15T08:02:36.731125-04:00,vsin_dk,draftkings,wcbb,wcbb_20260314_missouri_state_louisiana_tech,Mar 14,,Missouri State,Louisiana Tech,5.5,13.0,87.0,4.0,96.0,127.5,38.0,62.0,55.0,45.0,5.0,95.0,6.0,94.0,9.0,17.0,False,True,1,,,,,,,,,,,,
 2026-03-15T08:02:36.731125-04:00,vsin_dk,draftkings,wcbb,wcbb_20260314_hawaii_uc_san_diego,Mar 14,,Hawaii,UC San Diego,-1.5,68.0,32.0,90.0,10.0,120.5,31.0,69.0,37.0,63.0,60.0,40.0,60.0,40.0,22.0,6.0,True,False,1,,,,,,,,,,,,
 2026-03-15T08:02:36.731125-04:00,vsin_dk,draftkings,wcbb,wcbb_20260314_utsa_rice,Mar 14,,UTSA,Rice,7.5,19.0,81.0,16.0,84.0,116.5,28.0,72.0,44.0,56.0,5.0,95.0,16.0,84.0,3.0,16.0,False,True,1,,,,,,,,,,,,
+2026-03-15T14:02:45.868917-04:00,vsin_dk,draftkings,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-03-15T14:03:31.301759-04:00,vsin_circa,circa,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
