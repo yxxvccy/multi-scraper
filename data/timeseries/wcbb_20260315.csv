@@ -297,3 +297,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-15T08:02:36.731125-04:00,vsin_dk,draftkings,wcbb,wcbb_20260314_utsa_rice,Mar 14,,UTSA,Rice,7.5,19.0,81.0,16.0,84.0,116.5,28.0,72.0,44.0,56.0,5.0,95.0,16.0,84.0,3.0,16.0,False,True,1,,,,,,,,,,,,
 2026-03-15T14:02:45.868917-04:00,vsin_dk,draftkings,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-03-15T14:03:31.301759-04:00,vsin_circa,circa,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-03-15T14:32:23.383850-04:00,vsin_dk,draftkings,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-03-15T14:33:08.662302-04:00,vsin_circa,circa,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
