@@ -327,3 +327,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-15T20:33:04.816809-04:00,vsin_circa,circa,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-03-15T21:02:33.288140-04:00,vsin_dk,draftkings,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-03-15T21:03:21.311520-04:00,vsin_circa,circa,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-03-15T21:32:27.111709-04:00,vsin_dk,draftkings,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-03-15T21:33:11.633574-04:00,vsin_circa,circa,wcbb,wcbb_20260315_evansville_murray_state,Mar 15,,Evansville,Murray State,15.5,,100.0,,100.0,,,,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-03-15T21:33:11.633574-04:00,vsin_circa,circa,wcbb,wcbb_20260318_richmond_nebraska,Mar 18,,Richmond,Nebraska,2.5,,100.0,,100.0,,,,,,,100.0,,100.0,0.0,,False,,1,,,,,,,,,,,,
+2026-03-15T21:33:11.633574-04:00,vsin_circa,circa,wcbb,wcbb_20260319_arizona_state_virginia,Mar 19,,Arizona State,Virginia,2.5,,100.0,,100.0,126.5,100.0,,100.0,,,100.0,,100.0,0.0,0.0,False,False,1,,,,,,,,,,,,
