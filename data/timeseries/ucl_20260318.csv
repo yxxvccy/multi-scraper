@@ -181,3 +181,8 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-18T11:07:37.211580-04:00,vsin_dk,draftkings,ucl,ucl_20260318_galatasaray_liverpool,,,Galatasaray,Liverpool,900.0,26.0,74.0,66.0,34.0,,,,,,,,,,40.0,,True,,1,,,,,,,,,,,,
 2026-03-18T11:07:37.211580-04:00,vsin_dk,draftkings,ucl,ucl_20260318_atalanta_bayern_munchen,,,Atalanta,Bayern Munchen,600.0,6.0,94.0,13.0,87.0,,,,,,,,,,7.0,,False,,1,,,,,,,,,,,,
 2026-03-18T11:07:37.211580-04:00,vsin_dk,draftkings,ucl,ucl_20260318_arsenal_sporting_lisbon,,,Arsenal,Sporting Lisbon,-155.0,83.0,17.0,80.0,20.0,,,,,,,,,,3.0,,False,,1,,,,,,,,,,,,
+2026-03-18T11:37:09.847379-04:00,vsin_dk,draftkings,ucl,ucl_20260318_newcastle_barcelona,,,Newcastle,Barcelona,425.0,12.0,88.0,10.0,90.0,,,,,,,,,,2.0,,False,,1,,,,,,,,,,,,
+2026-03-18T11:37:09.847379-04:00,vsin_dk,draftkings,ucl,ucl_20260318_atletico_madrid_tottenham,,,Atletico Madrid,Tottenham,180.0,80.0,20.0,84.0,16.0,,,,,,,,,,4.0,,False,,1,,,,,,,,,,,,
+2026-03-18T11:37:09.847379-04:00,vsin_dk,draftkings,ucl,ucl_20260318_galatasaray_liverpool,,,Galatasaray,Liverpool,900.0,26.0,74.0,67.0,33.0,,,,,,,,,,41.0,,True,,1,,,,,,,,,,,,
+2026-03-18T11:37:09.847379-04:00,vsin_dk,draftkings,ucl,ucl_20260318_atalanta_bayern_munchen,,,Atalanta,Bayern Munchen,600.0,6.0,94.0,13.0,87.0,,,,,,,,,,7.0,,False,,1,,,,,,,,,,,,
+2026-03-18T11:37:09.847379-04:00,vsin_dk,draftkings,ucl,ucl_20260318_arsenal_sporting_lisbon,,,Arsenal,Sporting Lisbon,-155.0,84.0,16.0,83.0,17.0,,,,,,,,,,1.0,,False,,1,,,,,,,,,,,,
