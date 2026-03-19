@@ -131,3 +131,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-19T10:18:12.075045-04:00,vsin_dk,draftkings,ucl,ucl_20260319_bayern_munchen_real_madrid,,,Bayern Munchen,Real Madrid,100.0,60.0,40.0,98.0,2.0,,,,,,,,,,38.0,,True,,1,,,,,,,,,,,,
 2026-03-19T10:18:12.075045-04:00,vsin_dk,draftkings,ucl,ucl_20260319_liverpool_paris_stgermain,,,Liverpool,Paris St-Germain,235.0,16.0,84.0,10.0,90.0,,,,,,,,,,6.0,,False,,1,,,,,,,,,,,,
 2026-03-19T10:18:12.075045-04:00,vsin_dk,draftkings,ucl,ucl_20260319_atletico_madrid_barcelona,,,Atletico Madrid,Barcelona,450.0,18.0,82.0,35.0,65.0,2.5,100.0,,100.0,,,,,,17.0,0.0,True,False,1,,,,,,,,,,,,
+2026-03-19T10:37:22.137251-04:00,vsin_dk,draftkings,ucl,ucl_20260319_arsenal_sporting_lisbon,,,Arsenal,Sporting Lisbon,-125.0,80.0,20.0,90.0,10.0,2.5,100.0,,100.0,,,,,,10.0,0.0,False,False,1,,,,,,,,,,,,
+2026-03-19T10:37:22.137251-04:00,vsin_dk,draftkings,ucl,ucl_20260319_bayern_munchen_real_madrid,,,Bayern Munchen,Real Madrid,100.0,60.0,40.0,98.0,2.0,,,,,,,,,,38.0,,True,,1,,,,,,,,,,,,
+2026-03-19T10:37:22.137251-04:00,vsin_dk,draftkings,ucl,ucl_20260319_liverpool_paris_stgermain,,,Liverpool,Paris St-Germain,235.0,16.0,84.0,10.0,90.0,,,,,,,,,,6.0,,False,,1,,,,,,,,,,,,
+2026-03-19T10:37:22.137251-04:00,vsin_dk,draftkings,ucl,ucl_20260319_atletico_madrid_barcelona,,,Atletico Madrid,Barcelona,450.0,18.0,83.0,35.0,65.0,2.5,100.0,,100.0,,,,,,18.0,0.0,True,False,1,,,,,,,,,,,,
