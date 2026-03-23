@@ -903,3 +903,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-23T08:04:33.395211-04:00,vsin_dk,draftkings,cbase,cbase_20260323_utah_valley_stanford,Mar 23,,Utah Valley,Stanford,170.0,5.0,95.0,3.0,97.0,,,,,,,,,,2.0,,False,,1,,,,,,,,,,,,
 2026-03-23T08:04:33.395211-04:00,vsin_dk,draftkings,cbase,cbase_20260323_arizona_state_unlv,Mar 23,,Arizona State,UNLV,-360.0,94.0,6.0,81.0,19.0,,,,,,,,,,13.0,,False,,1,,,,,,,,,,,,
 2026-03-23T08:04:33.395211-04:00,vsin_dk,draftkings,cbase,cbase_20260323_long_beach_state_fresno_state,Mar 23,,Long Beach State,Fresno State,135.0,24.0,76.0,67.0,33.0,,,,,,,,,,43.0,,True,,1,,,,,,,,,,,,
+2026-03-23T08:34:03.604458-04:00,vsin_dk,draftkings,cbase,cbase_20260323_uc_davis_cal_poly,Mar 23,,UC Davis,Cal Poly,210.0,12.0,88.0,8.0,92.0,,,,,,,,,,4.0,,False,,1,,,,,,,,,,,,
+2026-03-23T08:34:03.604458-04:00,vsin_dk,draftkings,cbase,cbase_20260323_utah_valley_stanford,Mar 23,,Utah Valley,Stanford,170.0,6.0,94.0,3.0,97.0,,,,,,,,,,3.0,,False,,1,,,,,,,,,,,,
+2026-03-23T08:34:03.604458-04:00,vsin_dk,draftkings,cbase,cbase_20260323_arizona_state_unlv,Mar 23,,Arizona State,UNLV,-360.0,94.0,6.0,83.0,17.0,,,,,,,,,,11.0,,False,,1,,,,,,,,,,,,
+2026-03-23T08:34:03.604458-04:00,vsin_dk,draftkings,cbase,cbase_20260323_long_beach_state_fresno_state,Mar 23,,Long Beach State,Fresno State,135.0,26.0,74.0,67.0,33.0,,,,,,,,,,41.0,,True,,1,,,,,,,,,,,,
