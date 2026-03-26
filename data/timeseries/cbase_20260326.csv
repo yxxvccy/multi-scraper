@@ -308,3 +308,6 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-26T08:48:07.037748-04:00,vsin_dk,draftkings,cbase,cbase_20260326_miami_fl_clemson,Mar 26,,Miami FL,Clemson,-110.0,54.0,46.0,56.0,44.0,,,,,,,,,,2.0,,False,,1,,,,,,,,,,,,
 2026-03-26T08:48:07.037748-04:00,vsin_dk,draftkings,cbase,cbase_20260326_oklahoma_texas,Mar 26,,Oklahoma,Texas,190.0,10.0,90.0,27.0,73.0,,,,,,,,,,17.0,,True,,1,,,,,,,,,,,,
 2026-03-26T08:48:07.037748-04:00,vsin_dk,draftkings,cbase,cbase_20260326_oklahoma_state_byu,Mar 26,,Oklahoma State,BYU,-200.0,86.0,14.0,89.0,11.0,,,,,,,,,,3.0,,False,,1,,,,,,,,,,,,
+2026-03-26T09:03:46.224939-04:00,vsin_dk,draftkings,cbase,cbase_20260326_miami_fl_clemson,Mar 26,,Miami FL,Clemson,-110.0,53.0,47.0,56.0,44.0,,,,,,,,,,3.0,,False,,1,,,,,,,,,,,,
+2026-03-26T09:03:46.224939-04:00,vsin_dk,draftkings,cbase,cbase_20260326_oklahoma_texas,Mar 26,,Oklahoma,Texas,190.0,10.0,90.0,26.0,74.0,,,,,,,,,,16.0,,True,,1,,,,,,,,,,,,
+2026-03-26T09:03:46.224939-04:00,vsin_dk,draftkings,cbase,cbase_20260326_oklahoma_state_byu,Mar 26,,Oklahoma State,BYU,-200.0,86.0,14.0,89.0,11.0,,,,,,,,,,3.0,,False,,1,,,,,,,,,,,,
