@@ -353,3 +353,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-29T10:07:29.455559-04:00,vsin_circa,circa,nba,nba_20260329_1michigan_michigan,,,(1)Michigan,Michigan,17.0,75.0,62.0,54.0,67.0,75.0,98.0,72.0,,,,,,,5.0,,False,,1,,,,,,,,,,,,
 2026-03-29T10:07:29.455559-04:00,vsin_circa,circa,nba,nba_20260329_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,88.0,75.0,95.0,85.0,88.0,53.0,61.0,,,,,,,10.0,,False,,1,,,,,,,,,,,,
 2026-03-29T10:07:29.455559-04:00,vsin_circa,circa,nba,nba_20260329_1duke_duke,,,(1)Duke,Duke,13.0,12.0,25.0,5.0,15.0,133.5,47.0,39.0,,,,,,,10.0,,False,,1,,,,,,,,,,,,
+2026-03-29T10:30:46.670751-04:00,vsin_circa,circa,nba,nba_20260329_6tennessee_tennessee,,,(6)Tennessee,Tennessee,6.0,40.0,39.0,46.0,33.0,40.0,2.0,27.0,,,,,,,6.0,,False,,1,,,,,,,,,,,,
+2026-03-29T10:30:46.670751-04:00,vsin_circa,circa,nba,nba_20260329_1michigan_michigan,,,(1)Michigan,Michigan,17.0,60.0,61.0,54.0,67.0,60.0,98.0,73.0,,,,,,,6.0,,False,,1,,,,,,,,,,,,
+2026-03-29T10:30:46.670751-04:00,vsin_circa,circa,nba,nba_20260329_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,88.0,74.0,95.0,86.0,88.0,53.0,61.0,,,,,,,12.0,,False,,1,,,,,,,,,,,,
+2026-03-29T10:30:46.670751-04:00,vsin_circa,circa,nba,nba_20260329_1duke_duke,,,(1)Duke,Duke,13.0,12.0,26.0,5.0,14.0,133.5,47.0,39.0,,,,,,,12.0,,False,,1,,,,,,,,,,,,
