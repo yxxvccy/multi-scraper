@@ -668,3 +668,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-29T12:24:51.042461-04:00,vsin_dk,draftkings,cbase,cbase_20260329_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,69.0,69.0,70.0,84.0,69.0,44.0,40.0,,,,,,,15.0,,True,,1,,,,,,,,,,,,
 2026-03-29T12:25:30.594746-04:00,vsin_circa,circa,cbase,cbase_20260329_6tennessee_tennessee,,,(6)Tennessee,Tennessee,6.0,37.0,36.0,57.0,56.0,37.0,2.0,29.0,,,,,,,20.0,,True,,1,,,,,,,,,,,,
 2026-03-29T12:25:30.594746-04:00,vsin_circa,circa,cbase,cbase_20260329_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,72.0,70.0,94.0,76.0,72.0,48.0,60.0,,,,,,,6.0,,False,,1,,,,,,,,,,,,
+2026-03-29T12:33:48.630494-04:00,vsin_dk,draftkings,cbase,cbase_20260329_6tennessee_tennessee,,,(6)Tennessee,Tennessee,6.0,30.0,35.0,61.0,68.0,35.0,20.0,19.0,,,,,,,33.0,,True,,1,,,,,,,,,,,,
+2026-03-29T12:33:48.630494-04:00,vsin_dk,draftkings,cbase,cbase_20260329_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,69.0,69.0,70.0,84.0,69.0,43.0,40.0,,,,,,,15.0,,True,,1,,,,,,,,,,,,
+2026-03-29T12:34:28.135016-04:00,vsin_circa,circa,cbase,cbase_20260329_6tennessee_tennessee,,,(6)Tennessee,Tennessee,6.0,37.0,36.0,57.0,53.0,37.0,2.0,28.0,,,,,,,17.0,,True,,1,,,,,,,,,,,,
+2026-03-29T12:34:28.135016-04:00,vsin_circa,circa,cbase,cbase_20260329_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,72.0,68.0,94.0,77.0,72.0,48.0,59.0,,,,,,,9.0,,False,,1,,,,,,,,,,,,
