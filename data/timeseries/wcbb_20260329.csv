@@ -207,3 +207,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-29T12:32:45.198416-04:00,vsin_dk,draftkings,wcbb,wcbb_20260329_1duke_duke,,,(1)Duke,Duke,16.0,31.0,31.0,30.0,16.0,31.0,57.0,60.0,,,,,,,15.0,,True,,1,,,,,,,,,,,,
 2026-03-29T12:33:25.092758-04:00,vsin_circa,circa,wcbb,wcbb_20260329_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,72.0,68.0,94.0,77.0,72.0,48.0,59.0,,,,,,,9.0,,False,,1,,,,,,,,,,,,
 2026-03-29T12:33:25.092758-04:00,vsin_circa,circa,wcbb,wcbb_20260329_1duke_duke,,,(1)Duke,Duke,16.0,28.0,32.0,6.0,23.0,32.0,52.0,41.0,,,,,,,9.0,,False,,1,,,,,,,,,,,,
+2026-03-29T13:00:54.461767-04:00,vsin_dk,draftkings,wcbb,wcbb_20260329_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,69.0,69.0,70.0,83.0,69.0,43.0,40.0,,,,,,,14.0,,False,,1,,,,,,,,,,,,
+2026-03-29T13:00:54.461767-04:00,vsin_dk,draftkings,wcbb,wcbb_20260329_1duke_duke,,,(1)Duke,Duke,16.0,31.0,31.0,30.0,17.0,31.0,57.0,60.0,,,,,,,14.0,,False,,1,,,,,,,,,,,,
+2026-03-29T13:01:31.573650-04:00,vsin_circa,circa,wcbb,wcbb_20260329_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,71.0,65.0,95.0,81.0,71.0,48.0,59.0,,,,,,,16.0,,True,,1,,,,,,,,,,,,
+2026-03-29T13:01:31.573650-04:00,vsin_circa,circa,wcbb,wcbb_20260329_1duke_duke,,,(1)Duke,Duke,16.0,29.0,35.0,5.0,19.0,35.0,52.0,41.0,,,,,,,16.0,,True,,1,,,,,,,,,,,,
