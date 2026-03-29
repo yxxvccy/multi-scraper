@@ -524,3 +524,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-03-29T02:33:29.325636-04:00,vsin_dk,draftkings,cbase,cbase_20260329_uc_irvine_long_beach_state,Mar 29,,UC Irvine,Long Beach State,-166.0,58.0,42.0,72.0,28.0,,,,,,,,,,14.0,,False,,1,,,,,,,,,,,,
 2026-03-29T02:33:29.325636-04:00,vsin_dk,draftkings,cbase,cbase_20260329_mercer_oregon_state,Mar 29,,Mercer,Oregon State,230.0,1.0,99.0,,100.0,,,,,,,,,,1.0,,False,,1,,,,,,,,,,,,
 2026-03-29T02:33:29.325636-04:00,vsin_dk,draftkings,cbase,cbase_20260329_west_virginia_arizona_state,Mar 29,,West Virginia,Arizona State,110.0,35.0,65.0,6.0,94.0,,,,,,,,,,29.0,,True,,1,,,,,,,,,,,,
+2026-03-29T02:57:47.510249-04:00,vsin_dk,draftkings,cbase,cbase_20260329_9iowa_iowa,,,(9)Iowa,Iowa,9.0,35.0,43.0,72.0,78.0,35.0,35.0,30.0,,,,,,,35.0,,True,,1,,,,,,,,,,,,
+2026-03-29T02:57:47.510249-04:00,vsin_dk,draftkings,cbase,cbase_20260329_3illinois_illinois,,,(3)Illinois,Illinois,25.0,65.0,57.0,28.0,22.0,65.0,65.0,70.0,,,,,,,35.0,,True,,1,,,,,,,,,,,,
+2026-03-29T02:57:47.510249-04:00,vsin_dk,draftkings,cbase,cbase_20260329_2purdue_purdue,,,(2)Purdue,Purdue,2.0,37.0,30.0,79.0,76.0,37.0,31.0,26.0,,,,,,,46.0,,True,,1,,,,,,,,,,,,
+2026-03-29T02:57:47.510249-04:00,vsin_dk,draftkings,cbase,cbase_20260329_1arizona_arizona,,,(1)Arizona,Arizona,28.0,63.0,70.0,21.0,24.0,63.0,69.0,74.0,,,,,,,46.0,,True,,1,,,,,,,,,,,,
