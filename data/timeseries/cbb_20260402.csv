@@ -95,3 +95,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-02T06:44:26.271798-04:00,vsin_dk,draftkings,cbb,cbb_20260402_6connecticut_connecticut,,,(6)Connecticut,Connecticut,6.0,58.0,62.0,22.0,26.0,58.0,58.0,65.0,,,,,,,36.0,,True,,1,,,,,,,,,,,,
 2026-04-02T06:44:26.271798-04:00,vsin_dk,draftkings,cbb,cbb_20260402_3michigan_michigan,,,(3)Michigan,Michigan,3.0,54.0,50.0,73.0,66.0,54.0,39.0,42.0,,,,,,,16.0,,True,,1,,,,,,,,,,,,
 2026-04-02T06:44:26.271798-04:00,vsin_dk,draftkings,cbb,cbb_20260402_2arizona_arizona,,,(2)Arizona,Arizona,5.0,46.0,50.0,27.0,34.0,46.0,61.0,58.0,,,,,,,16.0,,True,,1,,,,,,,,,,,,
+2026-04-02T07:32:07.979249-04:00,vsin_dk,draftkings,cbb,cbb_20260402_9illinois_illinois,,,(9)Illinois,Illinois,9.0,42.0,38.0,78.0,74.0,42.0,42.0,35.0,,,,,,,36.0,,True,,1,,,,,,,,,,,,
+2026-04-02T07:32:07.979249-04:00,vsin_dk,draftkings,cbb,cbb_20260402_6connecticut_connecticut,,,(6)Connecticut,Connecticut,6.0,58.0,62.0,22.0,26.0,58.0,58.0,65.0,,,,,,,36.0,,True,,1,,,,,,,,,,,,
+2026-04-02T07:32:07.979249-04:00,vsin_dk,draftkings,cbb,cbb_20260402_3michigan_michigan,,,(3)Michigan,Michigan,3.0,54.0,50.0,73.0,66.0,54.0,39.0,42.0,,,,,,,16.0,,True,,1,,,,,,,,,,,,
+2026-04-02T07:32:07.979249-04:00,vsin_dk,draftkings,cbb,cbb_20260402_2arizona_arizona,,,(2)Arizona,Arizona,5.0,46.0,50.0,27.0,34.0,46.0,61.0,58.0,,,,,,,16.0,,True,,1,,,,,,,,,,,,
