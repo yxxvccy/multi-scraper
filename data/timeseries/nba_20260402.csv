@@ -15,3 +15,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-02T10:39:50.501489-04:00,vsin_circa,circa,nba,nba_20260402_1new_mexico_new_mexico,,,(1)New Mexico,New Mexico,-3.0,3.0,40.0,0.0,0.0,40.0,100.0,100.0,,,,,,,,,,,1,,,,,,,,,,,,
 2026-04-02T10:39:50.501489-04:00,vsin_circa,circa,nba,nba_20260402_4illinois_st_illinois_st,,,(4)Illinois ST,Illinois ST,4.0,22.0,63.0,50.0,50.0,63.0,50.0,50.0,,,,,,,13.0,,False,,1,,,,,,,,,,,,
 2026-04-02T10:39:50.501489-04:00,vsin_circa,circa,nba,nba_20260402_1auburn_auburn,,,(1)Auburn,Auburn,-7.0,78.0,38.0,50.0,50.0,78.0,50.0,50.0,,,,,,,12.0,,False,,1,,,,,,,,,,,,
+2026-04-02T11:10:00.427591-04:00,vsin_circa,circa,nba,nba_20260402_1tulsa_tulsa,,,(1)Tulsa,Tulsa,3.0,96.0,55.0,100.0,100.0,96.0,0.0,0.0,,,,,,,45.0,,True,,1,,,,,,,,,,,,
+2026-04-02T11:10:00.427591-04:00,vsin_circa,circa,nba,nba_20260402_1new_mexico_new_mexico,,,(1)New Mexico,New Mexico,-3.0,4.0,45.0,0.0,0.0,45.0,100.0,100.0,,,,,,,,,,,1,,,,,,,,,,,,
+2026-04-02T11:10:00.427591-04:00,vsin_circa,circa,nba,nba_20260402_4illinois_st_illinois_st,,,(4)Illinois ST,Illinois ST,4.0,23.0,67.0,50.0,50.0,67.0,50.0,50.0,,,,,,,17.0,,True,,1,,,,,,,,,,,,
+2026-04-02T11:10:00.427591-04:00,vsin_circa,circa,nba,nba_20260402_1auburn_auburn,,,(1)Auburn,Auburn,-7.0,77.0,33.0,50.0,50.0,77.0,50.0,50.0,,,,,,,17.0,,True,,1,,,,,,,,,,,,
