@@ -13,3 +13,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-02T11:35:05.882897-04:00,vsin_circa,circa,cbase,cbase_20260402_1new_mexico_new_mexico,,,(1)New Mexico,New Mexico,-3.0,13.0,46.0,0.0,0.0,46.0,100.0,100.0,,,,,,,,,,,1,,,,,,,,,,,,
 2026-04-02T12:03:33.398808-04:00,vsin_dk,draftkings,cbase,cbase_20260402_1new_mexico_new_mexico,,,(1)New Mexico,New Mexico,-3.5,60.0,56.0,35.0,47.0,60.0,58.0,69.0,,,,,,,9.0,,False,,1,,,,,,,,,,,,
 2026-04-02T12:04:11.418015-04:00,vsin_circa,circa,cbase,cbase_20260402_1new_mexico_new_mexico,,,(1)New Mexico,New Mexico,-3.5,13.0,43.0,0.0,0.0,43.0,100.0,100.0,,,,,,,,,,,1,,,,,,,,,,,,
+2026-04-02T12:33:27.699625-04:00,vsin_dk,draftkings,cbase,cbase_20260402_1new_mexico_new_mexico,,,(1)New Mexico,New Mexico,-2.5,60.0,56.0,35.0,48.0,60.0,59.0,69.0,,,,,,,8.0,,False,,1,,,,,,,,,,,,
+2026-04-02T12:34:04.496663-04:00,vsin_circa,circa,cbase,cbase_20260402_1new_mexico_new_mexico,,,(1)New Mexico,New Mexico,-3.0,4.0,38.0,0.0,0.0,38.0,100.0,100.0,,,,,,,,,,,1,,,,,,,,,,,,
