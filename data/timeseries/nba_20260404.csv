@@ -109,3 +109,8 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-04T17:00:37.991435-04:00,vsin_circa,circa,nba,nba_20260404_1michigan_michigan,,,(1)Michigan,Michigan,,32.0,53.0,47.0,39.0,32.0,93.0,46.0,,,,,,,14.0,,False,,1,,,,,,,,,,,,
 2026-04-04T17:00:37.991435-04:00,vsin_circa,circa,nba,nba_20260404_1arizona_arizona,,,(1)Arizona,Arizona,26.0,68.0,47.0,53.0,61.0,68.0,7.0,54.0,,,,,,,14.0,,False,,1,,,,,,,,,,,,
 2026-04-04T17:00:37.991435-04:00,vsin_circa,circa,nba,nba_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,100.0,100.0,0.0,0.0,100.0,32.0,67.0,,,,,,,,,,,1,,,,,,,,,,,,
+2026-04-04T17:27:13.924602-04:00,vsin_circa,circa,nba,nba_20260404_3illinois_illinois,,,(3)Illinois,Illinois,3.0,20.0,65.0,66.0,63.0,65.0,59.0,55.0,,,,,,,2.0,,False,,1,,,,,,,,,,,,
+2026-04-04T17:27:13.924602-04:00,vsin_circa,circa,nba,nba_20260404_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,80.0,35.0,34.0,38.0,80.0,41.0,45.0,,,,,,,3.0,,False,,1,,,,,,,,,,,,
+2026-04-04T17:27:13.924602-04:00,vsin_circa,circa,nba,nba_20260404_1michigan_michigan,,,(1)Michigan,Michigan,,32.0,51.0,48.0,39.0,32.0,93.0,46.0,,,,,,,12.0,,False,,1,,,,,,,,,,,,
+2026-04-04T17:27:13.924602-04:00,vsin_circa,circa,nba,nba_20260404_1arizona_arizona,,,(1)Arizona,Arizona,26.0,68.0,49.0,52.0,61.0,68.0,7.0,54.0,,,,,,,12.0,,False,,1,,,,,,,,,,,,
+2026-04-04T17:27:13.924602-04:00,vsin_circa,circa,nba,nba_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,100.0,100.0,0.0,0.0,100.0,35.0,71.0,,,,,,,,,,,1,,,,,,,,,,,,
