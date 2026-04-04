@@ -3,3 +3,4 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-04T00:35:13.796879-04:00,vsin_dk,draftkings,mlb,mlb_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,17.0,71.0,91.0,40.0,71.0,77.0,44.0,,,,,,,31.0,,True,,1,,,,,,,,,,,,
 2026-04-04T01:05:33.154533-04:00,vsin_dk,draftkings,mlb,mlb_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,22.0,71.0,91.0,46.0,71.0,79.0,44.0,,,,,,,25.0,,True,,1,,,,,,,,,,,,
 2026-04-04T01:21:58.642585-04:00,vsin_dk,draftkings,mlb,mlb_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,22.0,71.0,91.0,48.0,71.0,77.0,44.0,,,,,,,23.0,,True,,1,,,,,,,,,,,,
+2026-04-04T01:35:31.892333-04:00,vsin_dk,draftkings,mlb,mlb_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,22.0,71.0,91.0,48.0,71.0,73.0,43.0,,,,,,,23.0,,True,,1,,,,,,,,,,,,
