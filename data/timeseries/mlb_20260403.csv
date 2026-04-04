@@ -80,3 +80,4 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-03T08:35:44.718717-04:00,vsin_circa,circa,mlb,mlb_20260403_4illinois_st_illinois_st,,,(4)Illinois ST,Illinois ST,4.0,54.0,64.0,1.0,20.0,54.0,65.0,67.0,,,,,,,44.0,,True,,1,,,,,,,,,,,,
 2026-04-03T08:35:44.718717-04:00,vsin_circa,circa,mlb,mlb_20260403_1auburn_auburn,,,(1)Auburn,Auburn,4.0,46.0,36.0,99.0,80.0,46.0,35.0,33.0,,,,,,,44.0,,True,,1,,,,,,,,,,,,
 2026-04-03T23:35:29.004802-04:00,vsin_dk,draftkings,mlb,mlb_20260403_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,15.0,69.0,98.0,38.0,69.0,46.0,38.0,,,,,,,31.0,,True,,1,,,,,,,,,,,,
+2026-04-03T23:49:31.839650-04:00,vsin_dk,draftkings,mlb,mlb_20260403_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,16.0,70.0,98.0,37.0,70.0,54.0,38.0,,,,,,,33.0,,True,,1,,,,,,,,,,,,
