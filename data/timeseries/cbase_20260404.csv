@@ -99,3 +99,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-04T17:54:31.113477-04:00,vsin_dk,draftkings,cbase,cbase_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,71.0,34.0,78.0,50.0,71.0,36.0,47.0,,,,,,,16.0,,True,,1,,,,,,,,,,,,
 2026-04-04T17:55:08.366692-04:00,vsin_circa,circa,cbase,cbase_20260404_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,79.0,36.0,42.0,39.0,32.0,40.0,45.0,,,,,,,3.0,,False,,1,,,,,,,,,,,,
 2026-04-04T17:55:08.366692-04:00,vsin_circa,circa,cbase,cbase_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,100.0,100.0,32.0,50.0,100.0,63.0,74.0,,,,,,,50.0,,True,,1,,,,,,,,,,,,
+2026-04-04T18:03:39.110622-04:00,vsin_dk,draftkings,cbase,cbase_20260404_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,41.0,44.0,43.0,34.0,32.0,45.0,60.0,,,,,,,10.0,,False,,1,,,,,,,,,,,,
+2026-04-04T18:03:39.110622-04:00,vsin_dk,draftkings,cbase,cbase_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,71.0,34.0,78.0,50.0,71.0,40.0,47.0,,,,,,,16.0,,True,,1,,,,,,,,,,,,
+2026-04-04T18:04:18.671790-04:00,vsin_circa,circa,cbase,cbase_20260404_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,79.0,35.0,42.0,40.0,32.0,38.0,45.0,,,,,,,5.0,,False,,1,,,,,,,,,,,,
+2026-04-04T18:04:18.671790-04:00,vsin_circa,circa,cbase,cbase_20260404_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,100.0,100.0,32.0,50.0,100.0,46.0,70.0,,,,,,,50.0,,True,,1,,,,,,,,,,,,
