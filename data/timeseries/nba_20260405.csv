@@ -104,3 +104,6 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-05T08:36:33.105767-04:00,vsin_circa,circa,nba,nba_20260405_1michigan_michigan,,,(1)Michigan,Michigan,,40.0,48.0,69.0,52.0,40.0,81.0,51.0,,,,,,,4.0,,False,,1,,,,,,,,,,,,
 2026-04-05T08:36:33.105767-04:00,vsin_circa,circa,nba,nba_20260405_1arizona_arizona,,,(1)Arizona,Arizona,19.0,60.0,52.0,31.0,48.0,60.0,19.0,49.0,,,,,,,4.0,,False,,1,,,,,,,,,,,,
 2026-04-05T08:36:33.105767-04:00,vsin_circa,circa,nba,nba_20260405_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,100.0,100.0,32.0,50.0,100.0,56.0,71.0,,,,,,,50.0,,True,,1,,,,,,,,,,,,
+2026-04-05T09:07:14.659717-04:00,vsin_circa,circa,nba,nba_20260405_1tulsa_tulsa,,,(1)Tulsa,Tulsa,5.5,78.0,50.0,25.0,50.0,78.0,45.0,67.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-04-05T09:07:14.659717-04:00,vsin_circa,circa,nba,nba_20260405_1auburn_auburn,,,(1)Auburn,Auburn,2.0,22.0,50.0,75.0,50.0,50.0,55.0,33.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-04-05T09:07:14.659717-04:00,vsin_circa,circa,nba,nba_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,50.0,50.0,50.0,50.0,50.0,0.0,0.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
