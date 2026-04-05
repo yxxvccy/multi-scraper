@@ -116,3 +116,6 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-05T10:32:10.321736-04:00,vsin_circa,circa,nba,nba_20260405_1tulsa_tulsa,,,(1)Tulsa,Tulsa,5.0,83.0,54.0,25.0,50.0,83.0,45.0,67.0,,,,,,,4.0,,False,,1,,,,,,,,,,,,
 2026-04-05T10:32:10.321736-04:00,vsin_circa,circa,nba,nba_20260405_1auburn_auburn,,,(1)Auburn,Auburn,2.0,17.0,46.0,75.0,50.0,46.0,55.0,33.0,,,,,,,4.0,,False,,1,,,,,,,,,,,,
 2026-04-05T10:32:10.321736-04:00,vsin_circa,circa,nba,nba_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,50.0,50.0,0.0,0.0,50.0,0.0,0.0,,,,,,,,,,,1,,,,,,,,,,,,
+2026-04-05T11:05:01.901156-04:00,vsin_circa,circa,nba,nba_20260405_1tulsa_tulsa,,,(1)Tulsa,Tulsa,5.0,83.0,54.0,25.0,50.0,83.0,45.0,67.0,,,,,,,4.0,,False,,1,,,,,,,,,,,,
+2026-04-05T11:05:01.901156-04:00,vsin_circa,circa,nba,nba_20260405_1auburn_auburn,,,(1)Auburn,Auburn,2.0,17.0,46.0,75.0,50.0,46.0,55.0,33.0,,,,,,,4.0,,False,,1,,,,,,,,,,,,
+2026-04-05T11:05:01.901156-04:00,vsin_circa,circa,nba,nba_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,50.0,50.0,0.0,0.0,50.0,13.0,50.0,,,,,,,,,,,1,,,,,,,,,,,,
