@@ -211,3 +211,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-05T08:32:27.948593-04:00,vsin_circa,circa,wcbb,wcbb_20260405_milwaukee_brewersg2_milwaukee_brewers,,,Milwaukee BrewersG2,Milwaukee Brewers,2.0,100.0,100.0,32.0,50.0,100.0,56.0,71.0,,,,,,,50.0,,True,,1,,,,,,,,,,,,
 2026-04-05T09:02:31.317079-04:00,vsin_dk,draftkings,wcbb,wcbb_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,90.0,41.0,73.0,42.0,90.0,55.0,64.0,,,,,,,1.0,,False,,1,,,,,,,,,,,,
 2026-04-05T09:03:10.796102-04:00,vsin_circa,circa,wcbb,wcbb_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,50.0,50.0,50.0,50.0,50.0,0.0,0.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-04-05T09:32:32.183473-04:00,vsin_dk,draftkings,wcbb,wcbb_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,88.0,41.0,71.0,41.0,88.0,61.0,64.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-04-05T09:33:12.679267-04:00,vsin_circa,circa,wcbb,wcbb_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,50.0,50.0,50.0,50.0,50.0,0.0,0.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
