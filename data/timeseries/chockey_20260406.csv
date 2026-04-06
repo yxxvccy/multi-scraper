@@ -231,3 +231,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-06T18:28:54.263628-04:00,vsin_dk,draftkings,chockey,chockey_20260406_1michigan_michigan,,,(1)Michigan,Michigan,19.0,72.0,64.0,39.0,33.0,72.0,59.0,46.0,,,,,,,31.0,,True,,1,,,,,,,,,,,,
 2026-04-06T18:29:33.509113-04:00,vsin_circa,circa,chockey,chockey_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,39.0,45.0,31.0,79.0,39.0,53.0,48.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
 2026-04-06T18:29:33.509113-04:00,vsin_circa,circa,chockey,chockey_20260406_1michigan_michigan,,,(1)Michigan,Michigan,19.0,61.0,55.0,69.0,21.0,61.0,47.0,52.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
+2026-04-06T19:04:40.075882-04:00,vsin_dk,draftkings,chockey,chockey_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,29.0,36.0,61.0,66.0,36.0,42.0,54.0,,,,,,,30.0,,True,,1,,,,,,,,,,,,
+2026-04-06T19:04:40.075882-04:00,vsin_dk,draftkings,chockey,chockey_20260406_1michigan_michigan,,,(1)Michigan,Michigan,19.0,71.0,64.0,39.0,34.0,71.0,58.0,46.0,,,,,,,30.0,,True,,1,,,,,,,,,,,,
+2026-04-06T19:05:18.340542-04:00,vsin_circa,circa,chockey,chockey_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,39.0,45.0,31.0,79.0,39.0,53.0,48.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
+2026-04-06T19:05:18.340542-04:00,vsin_circa,circa,chockey,chockey_20260406_1michigan_michigan,,,(1)Michigan,Michigan,19.0,61.0,55.0,69.0,21.0,61.0,47.0,52.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
