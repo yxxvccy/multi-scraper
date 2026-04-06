@@ -147,3 +147,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-06T09:04:35.707450-04:00,vsin_circa,circa,cbase,cbase_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,39.0,45.0,31.0,79.0,39.0,53.0,48.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
 2026-04-06T09:33:37.836181-04:00,vsin_dk,draftkings,cbase,cbase_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,35.0,38.0,76.0,72.0,35.0,45.0,52.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
 2026-04-06T09:34:16.122697-04:00,vsin_circa,circa,cbase,cbase_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,39.0,45.0,31.0,79.0,39.0,53.0,48.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
+2026-04-06T10:03:41.814102-04:00,vsin_dk,draftkings,cbase,cbase_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,34.0,38.0,76.0,73.0,34.0,45.0,52.0,,,,,,,35.0,,True,,1,,,,,,,,,,,,
+2026-04-06T10:04:15.178462-04:00,vsin_circa,circa,cbase,cbase_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,39.0,45.0,31.0,79.0,39.0,53.0,48.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
