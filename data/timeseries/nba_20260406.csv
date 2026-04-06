@@ -77,3 +77,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-06T09:37:11.208019-04:00,vsin_circa,circa,nba,nba_20260406_1michigan_michigan,,,(1)Michigan,Michigan,12.0,61.0,55.0,69.0,21.0,61.0,47.0,52.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
 2026-04-06T10:06:54.858321-04:00,vsin_circa,circa,nba,nba_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,39.0,45.0,31.0,79.0,39.0,53.0,48.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
 2026-04-06T10:06:54.858321-04:00,vsin_circa,circa,nba,nba_20260406_1michigan_michigan,,,(1)Michigan,Michigan,12.0,61.0,55.0,69.0,21.0,61.0,47.0,52.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
+2026-04-06T10:37:27.884837-04:00,vsin_circa,circa,nba,nba_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,39.0,45.0,31.0,79.0,39.0,53.0,48.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
+2026-04-06T10:37:27.884837-04:00,vsin_circa,circa,nba,nba_20260406_1michigan_michigan,,,(1)Michigan,Michigan,12.0,61.0,55.0,69.0,21.0,61.0,47.0,52.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
