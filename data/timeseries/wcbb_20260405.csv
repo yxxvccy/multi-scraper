@@ -281,3 +281,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-05T22:03:05.832384-04:00,vsin_circa,circa,wcbb,wcbb_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,88.0,50.0,1.0,33.0,88.0,25.0,33.0,,,,,,,17.0,,True,,1,,,,,,,,,,,,
 2026-04-05T22:32:39.268097-04:00,vsin_dk,draftkings,wcbb,wcbb_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,74.0,43.0,23.0,35.0,74.0,51.0,69.0,,,,,,,8.0,,False,,1,,,,,,,,,,,,
 2026-04-05T22:33:19.255845-04:00,vsin_circa,circa,wcbb,wcbb_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,88.0,50.0,1.0,33.0,88.0,25.0,33.0,,,,,,,17.0,,True,,1,,,,,,,,,,,,
+2026-04-05T23:02:37.337370-04:00,vsin_dk,draftkings,wcbb,wcbb_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,74.0,43.0,23.0,35.0,74.0,51.0,69.0,,,,,,,8.0,,False,,1,,,,,,,,,,,,
+2026-04-05T23:03:17.096871-04:00,vsin_circa,circa,wcbb,wcbb_20260405_chicago_cubsg2_chicago_cubs,,,Chicago CubsG2,Chicago Cubs,2.0,88.0,50.0,1.0,33.0,88.0,25.0,33.0,,,,,,,17.0,,True,,1,,,,,,,,,,,,
