@@ -219,3 +219,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-06T17:02:44.845617-04:00,vsin_dk,draftkings,wcbb,wcbb_20260406_1michigan_michigan,,,(1)Michigan,Michigan,17.0,71.0,64.0,25.0,26.0,71.0,59.0,47.0,,,,,,,38.0,,True,,1,,,,,,,,,,,,
 2026-04-06T17:03:22.862476-04:00,vsin_circa,circa,wcbb,wcbb_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,39.0,45.0,31.0,79.0,39.0,53.0,48.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
 2026-04-06T17:03:22.862476-04:00,vsin_circa,circa,wcbb,wcbb_20260406_1michigan_michigan,,,(1)Michigan,Michigan,17.0,61.0,55.0,69.0,21.0,61.0,47.0,52.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
+2026-04-06T17:32:27.951131-04:00,vsin_dk,draftkings,wcbb,wcbb_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,29.0,36.0,74.0,73.0,36.0,41.0,53.0,,,,,,,37.0,,True,,1,,,,,,,,,,,,
+2026-04-06T17:32:27.951131-04:00,vsin_dk,draftkings,wcbb,wcbb_20260406_1michigan_michigan,,,(1)Michigan,Michigan,17.0,71.0,64.0,26.0,27.0,71.0,59.0,47.0,,,,,,,37.0,,True,,1,,,,,,,,,,,,
+2026-04-06T17:33:08.093388-04:00,vsin_circa,circa,wcbb,wcbb_20260406_2connecticut_connecticut,,,(2)Connecticut,Connecticut,2.0,39.0,45.0,31.0,79.0,39.0,53.0,48.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
+2026-04-06T17:33:08.093388-04:00,vsin_circa,circa,wcbb,wcbb_20260406_1michigan_michigan,,,(1)Michigan,Michigan,17.0,61.0,55.0,69.0,21.0,61.0,47.0,52.0,,,,,,,34.0,,True,,1,,,,,,,,,,,,
