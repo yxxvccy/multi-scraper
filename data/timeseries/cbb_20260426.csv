@@ -3,3 +3,4 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-26T09:32:44.745226-04:00,vsin_circa,circa,cbb,cbb_20260426_colorado_rockiesg2_colorado_rockies,,,Colorado RockiesG2,Colorado Rockies,2.0,50.0,50.0,50.0,50.0,50.0,0.0,0.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-04-26T09:59:22.056147-04:00,vsin_circa,circa,cbb,cbb_20260426_colorado_rockiesg2_colorado_rockies,,,Colorado RockiesG2,Colorado Rockies,2.0,50.0,50.0,50.0,50.0,50.0,0.0,0.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-04-26T10:32:37.453395-04:00,vsin_circa,circa,cbb,cbb_20260426_colorado_rockiesg2_colorado_rockies,,,Colorado RockiesG2,Colorado Rockies,2.0,50.0,50.0,50.0,50.0,50.0,1.0,33.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-04-26T11:02:45.985247-04:00,vsin_circa,circa,cbb,cbb_20260426_colorado_rockiesg2_colorado_rockies,,,Colorado RockiesG2,Colorado Rockies,2.0,50.0,50.0,100.0,100.0,50.0,1.0,33.0,,,,,,,50.0,,True,,1,,,,,,,,,,,,
