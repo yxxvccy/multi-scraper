@@ -30,3 +30,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-26T11:06:25.911213-04:00,vsin_circa,circa,mlb,mlb_20260426_colorado_rockiesg2_colorado_rockies,,,Colorado RockiesG2,Colorado Rockies,2.0,50.0,50.0,100.0,100.0,50.0,1.0,33.0,,,,,,,50.0,,True,,1,,,,,,,,,,,,
 2026-04-26T11:35:53.215940-04:00,vsin_dk,draftkings,mlb,mlb_20260426_colorado_rockiesg2_colorado_rockies,,,Colorado RockiesG2,Colorado Rockies,2.0,26.0,38.0,57.0,78.0,38.0,45.0,22.0,,,,,,,40.0,,True,,1,,,,,,,,,,,,
 2026-04-26T11:36:12.828029-04:00,vsin_circa,circa,mlb,mlb_20260426_colorado_rockiesg2_colorado_rockies,,,Colorado RockiesG2,Colorado Rockies,2.0,50.0,50.0,1.0,50.0,50.0,0.0,25.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-04-26T12:06:06.748650-04:00,vsin_dk,draftkings,mlb,mlb_20260426_colorado_rockiesg2_colorado_rockies,,,Colorado RockiesG2,Colorado Rockies,2.0,27.0,38.0,57.0,79.0,38.0,45.0,21.0,,,,,,,41.0,,True,,1,,,,,,,,,,,,
+2026-04-26T12:06:26.748615-04:00,vsin_circa,circa,mlb,mlb_20260426_colorado_rockiesg2_colorado_rockies,,,Colorado RockiesG2,Colorado Rockies,2.0,0.0,0.0,1.0,50.0,50.0,0.0,29.0,,,,,,,,,,,1,,,,,,,,,,,,
