@@ -24,3 +24,6 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-30T12:37:04.863710-04:00,vsin_dk,draftkings,ucl,ucl_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,22.0,61.0,78.0,59.0,61.0,30.0,36.0,,,,,,,2.0,,False,,1,,,,,,,,,,,,
 2026-04-30T12:37:04.863710-04:00,vsin_dk,draftkings,ucl,ucl_20260430_san_francisco_giantsg2_san_francisco_giants,,,San Francisco GiantsG2,San Francisco Giants,2.0,81.0,50.0,56.0,80.0,81.0,65.0,28.0,,,,,,,30.0,,True,,1,,,,,,,,,,,,
 2026-04-30T12:37:25.395625-04:00,vsin_circa,circa,ucl,ucl_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,0.0,0.0,100.0,100.0,100.0,100.0,100.0,,,,,,,,,,,1,,,,,,,,,,,,
+2026-04-30T12:59:34.093484-04:00,vsin_dk,draftkings,ucl,ucl_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,23.0,62.0,77.0,59.0,62.0,44.0,36.0,,,,,,,3.0,,False,,1,,,,,,,,,,,,
+2026-04-30T12:59:34.093484-04:00,vsin_dk,draftkings,ucl,ucl_20260430_san_francisco_giantsg2_san_francisco_giants,,,San Francisco GiantsG2,San Francisco Giants,2.0,77.0,50.0,64.0,79.0,77.0,63.0,28.0,,,,,,,29.0,,True,,1,,,,,,,,,,,,
+2026-04-30T12:59:54.085524-04:00,vsin_circa,circa,ucl,ucl_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,0.0,0.0,100.0,100.0,100.0,100.0,100.0,,,,,,,,,,,1,,,,,,,,,,,,
