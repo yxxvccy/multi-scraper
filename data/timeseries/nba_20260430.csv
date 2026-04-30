@@ -6,3 +6,4 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-30T11:08:12.849020-04:00,vsin_circa,circa,nba,nba_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-04-30T11:17:30.748051-04:00,vsin_circa,circa,nba,nba_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,50.0,50.0,50.0,50.0,50.0,50.0,50.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-04-30T11:37:43.917525-04:00,vsin_circa,circa,nba,nba_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,50.0,50.0,100.0,100.0,50.0,50.0,50.0,,,,,,,50.0,,True,,1,,,,,,,,,,,,
+2026-04-30T12:08:27.082703-04:00,vsin_circa,circa,nba,nba_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,0.0,0.0,100.0,100.0,100.0,100.0,100.0,,,,,,,,,,,1,,,,,,,,,,,,
