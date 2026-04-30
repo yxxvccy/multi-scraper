@@ -27,3 +27,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-04-30T16:50:59.622751-04:00,vsin_circa,circa,cbb,cbb_20260430_san_francisco_giantsg2_san_francisco_giants,,,San Francisco GiantsG2,San Francisco Giants,2.0,0.0,0.0,73.0,80.0,73.0,13.0,33.0,,,,,,,,,,,1,,,,,,,,,,,,
 2026-04-30T17:02:45.696499-04:00,vsin_circa,circa,cbb,cbb_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,99.0,20.0,100.0,75.0,99.0,34.0,62.0,,,,,,,55.0,,True,,1,,,,,,,,,,,,
 2026-04-30T17:02:45.696499-04:00,vsin_circa,circa,cbb,cbb_20260430_san_francisco_giantsg2_san_francisco_giants,,,San Francisco GiantsG2,San Francisco Giants,2.0,0.0,0.0,74.0,83.0,74.0,11.0,30.0,,,,,,,,,,,1,,,,,,,,,,,,
+2026-04-30T17:32:51.278940-04:00,vsin_circa,circa,cbb,cbb_20260430_houston_astrosg2_houston_astros,,,Houston AstrosG2,Houston Astros,2.0,99.0,20.0,100.0,75.0,99.0,34.0,62.0,,,,,,,55.0,,True,,1,,,,,,,,,,,,
+2026-04-30T17:32:51.278940-04:00,vsin_circa,circa,cbb,cbb_20260430_san_francisco_giantsg2_san_francisco_giants,,,San Francisco GiantsG2,San Francisco Giants,2.0,0.0,0.0,74.0,83.0,74.0,7.0,28.0,,,,,,,,,,,1,,,,,,,,,,,,
