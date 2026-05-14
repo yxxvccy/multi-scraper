@@ -461,10 +461,10 @@ def fetch_vsin(url: str, driver, sport: str, source_key: str = "", wait_seconds:
         else:
             raise
 
-    # Wait for the freezetable to appear
+    # Wait for the splits table to appear (new sp-table or legacy freezetable)
     try:
         WebDriverWait(driver, 15).until(EC.presence_of_element_located(
-            (By.CSS_SELECTOR, "table.freezetable, table")
+            (By.CSS_SELECTOR, "table.sp-table, tr.sp-row, table.freezetable, table")
         ))
     except Exception:
         pass
@@ -855,23 +855,165 @@ def fetch_sbd(url: str, driver, wait_seconds: int = 6) -> str:
 # -------------------------------------------------------
 # VSiN-SPECIFIC PARSER (data.vsin.com)
 # -------------------------------------------------------
-# VSiN uses a <table class="freezetable"> with this column layout:
-#   td[0]: Team names (away first, home second) as <a class="txt-color-vsinred">
-#   td[1]: Spread lines (away line / home line)
-#   td[2]: Spread HANDLE %  (away% / home%)
-#   td[3]: Spread BETS %    (away% / home%)
-#   td[4]: Total lines       (over / under â€” same number repeated)
-#   td[5]: Total HANDLE %   (over% / under%)
-#   td[6]: Total BETS %     (over% / under%)
-#   td[7]: Moneyline odds   (away / home)
-#   td[8]: ML HANDLE %      (away% / home%)
-#   td[9]: ML BETS %        (away% / home%)
+# Two layouts are supported:
 #
-# Date headers appear as <tr> with <th> containing day names.
-# Each game is a single <tr> with 10 <td> cells.
+# (1) NEW (May 2026+): <table class="sp-table">
+#     - One <tr class="sp-row"> per TEAM (so 2 rows per game)
+#     - Rows paired by data-gamecode attribute (e.g. "20260515NBA00067")
+#     - Date in <thead> as "<League> - Friday, May 15"
+#     - Each row has 11 <td>s. Column layout:
+#         td[0]: action button (also carries data-gamecode)
+#         td[1]: team logo + <a class="sp-team-link"> name
+#         td[2]: spread line  (<span class="sp-badge sp-badge-line">)
+#         td[3]: spread handle %  (<span class="sp-badge">)
+#         td[4]: spread bets %
+#         td[5]: total line
+#         td[6]: total handle %  (row 1 = over, row 2 = under)
+#         td[7]: total bets %
+#         td[8]: moneyline price
+#         td[9]: ML handle %
+#         td[10]: ML bets %
+#
+# (2) LEGACY: <table class="freezetable"> with one row per GAME, 10 tds,
+#     percentages paired within single cells. Kept as a fallback.
 
 def parse_vsin(html: str, source_key: str, sport: str) -> list[dict]:
-    """Parse VSiN betting splits from their freezetable format."""
+    """Parse VSiN betting splits. Tries new sp-table layout first, then legacy."""
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Try the new sp-table layout first
+    if soup.find("table", class_="sp-table") or soup.find("tr", class_="sp-row"):
+        return _parse_vsin_sp_table(soup, source_key, sport)
+
+    # Fall back to the legacy freezetable parser
+    return _parse_vsin_legacy(html, source_key, sport)
+
+
+def _parse_vsin_sp_table(soup, source_key: str, sport: str) -> list[dict]:
+    """Parse VSiN's new sp-table layout (one row per team, paired by data-gamecode)."""
+    now = now_eastern().isoformat()
+    src = SOURCES[source_key]
+    games = []
+
+    MONTHS_RE = r"Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
+
+    def _num_from(text):
+        if not text:
+            return ""
+        m = re.search(r"[+-]?\d+(?:\.\d+)?", text)
+        return float(m.group(0)) if m else ""
+
+    def _pct_from(text):
+        if not text:
+            return ""
+        m = re.search(r"(\d{1,3}(?:\.\d)?)\s*%", text)
+        return float(m.group(1)) if m else ""
+
+    def _badge_text(td):
+        if td is None:
+            return ""
+        badge = td.find(class_="sp-badge")
+        return (badge or td).get_text(" ", strip=True)
+
+    # Collect all sp-tables; if none, fall back to scanning the whole soup
+    tables = soup.find_all("table", class_="sp-table") or [soup]
+
+    for table in tables:
+        # Date for this table comes from its <thead>, e.g. "NBA - Friday, May 15"
+        current_date = ""
+        thead = table.find("thead") if hasattr(table, "find") else None
+        if thead is not None:
+            m = re.search(rf"({MONTHS_RE})\s+(\d{{1,2}})", thead.get_text(" "))
+            if m:
+                current_date = f"{m.group(1)} {m.group(2)}"
+
+        rows = table.find_all("tr", class_="sp-row") if hasattr(table, "find_all") else []
+
+        # Group rows by data-gamecode, preserving order
+        by_game: dict = {}
+        order: list = []
+        for row in rows:
+            gc_el = row.find(attrs={"data-gamecode": True})
+            gamecode = gc_el.get("data-gamecode") if gc_el else None
+            if not gamecode:
+                continue
+            if gamecode not in by_game:
+                by_game[gamecode] = []
+                order.append(gamecode)
+            by_game[gamecode].append(row)
+
+        for gamecode in order:
+            pair = by_game[gamecode]
+            if len(pair) < 2:
+                continue
+            away_row, home_row = pair[0], pair[1]
+
+            def _extract(row):
+                tds = row.find_all("td")
+                if len(tds) < 11:
+                    return None
+                team_link = row.find(class_="sp-team-link")
+                team = team_link.get_text(strip=True) if team_link else ""
+                # Strip sport suffixes like [W], [M]
+                team = re.sub(r"\s*[\[\(][WMwm][\]\)]\s*$", "", team).strip()
+                if not team:
+                    return None
+                return {
+                    "team":        team,
+                    "spread_line": _num_from(_badge_text(tds[2])),
+                    "spread_hnd":  _pct_from(_badge_text(tds[3])),
+                    "spread_bet":  _pct_from(_badge_text(tds[4])),
+                    "total_line":  _num_from(_badge_text(tds[5])),
+                    "total_hnd":   _pct_from(_badge_text(tds[6])),
+                    "total_bet":   _pct_from(_badge_text(tds[7])),
+                    "ml_hnd":      _pct_from(_badge_text(tds[9])),
+                    "ml_bet":      _pct_from(_badge_text(tds[10])),
+                }
+
+            a = _extract(away_row)
+            h = _extract(home_row)
+            if not a or not h:
+                continue
+
+            game = {col: "" for col in COLUMNS}
+            game["timestamp"]  = now
+            game["source"]     = source_key
+            game["book"]       = src["book"]
+            game["sport"]      = sport
+            game["game_date"]  = current_date
+            game["away_team"]  = a["team"]
+            game["home_team"]  = h["team"]
+
+            # Spread: store the away team's line (negative = away favored).
+            # Matches the legacy parser's convention of one line per game.
+            game["spread_line"]             = a["spread_line"]
+            game["spread_away_handle_pct"]  = a["spread_hnd"]
+            game["spread_home_handle_pct"]  = h["spread_hnd"]
+            game["spread_away_bets_pct"]    = a["spread_bet"]
+            game["spread_home_bets_pct"]    = h["spread_bet"]
+
+            # Total: both teams' rows show the same total line; over/under split
+            # is row1 (away) = over %, row2 (home) = under %.
+            game["total_line"]              = a["total_line"]
+            game["total_over_handle_pct"]   = a["total_hnd"]
+            game["total_under_handle_pct"]  = h["total_hnd"]
+            game["total_over_bets_pct"]     = a["total_bet"]
+            game["total_under_bets_pct"]    = h["total_bet"]
+
+            # Moneyline
+            game["ml_away_handle_pct"] = a["ml_hnd"]
+            game["ml_home_handle_pct"] = h["ml_hnd"]
+            game["ml_away_bets_pct"]   = a["ml_bet"]
+            game["ml_home_bets_pct"]   = h["ml_bet"]
+
+            compute_signals(game)
+            games.append(game)
+
+    return games
+
+
+def _parse_vsin_legacy(html: str, source_key: str, sport: str) -> list[dict]:
+    """Legacy parser for VSiN's old freezetable layout (pre-May 2026)."""
     soup = BeautifulSoup(html, "html.parser")
     now = now_eastern().isoformat()
     src = SOURCES[source_key]
