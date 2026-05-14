@@ -1,32 +1,41 @@
 name: Scheduled Scrape
-
+ 
 on:
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
-
+ 
 jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+ 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
+ 
       - name: Install Chrome and dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y chromium-browser chromium-chromedriver
           pip install -r requirements.txt
-
+ 
       - name: Run scraper
         env:
           TZ: America/New_York
         run: python multi_scraper.py --batch cbb wcbb cbase chockey mlb epl ucl nba --once --auto-close 30
-
+ 
+      - name: Upload raw HTML for debugging
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-html-${{ github.run_id }}
+          path: data/raw_html/
+          retention-days: 7
+          if-no-files-found: warn
+ 
       - name: Commit and push new data
         run: |
           git config user.name "github-actions[bot]"
