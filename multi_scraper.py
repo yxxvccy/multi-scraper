@@ -91,6 +91,7 @@ SPORT_INFO = {
         "dk_network": True,
         "dk_dropdown_label": "NFL",
         "season": "Sep-Feb",
+        "gamecode_league": "NFL",
     },
     "nba": {
         "display": "NBA",
@@ -100,6 +101,20 @@ SPORT_INFO = {
         "dk_network": True,
         "dk_dropdown_label": "NBA",
         "season": "Oct-Jun",
+        # VSiN's data-gamecode embeds the league marker (e.g. "20260518NBA00067").
+        # Used to filter out cross-league rows that occasionally appear on the page.
+        "gamecode_league": "NBA",
+    },
+    "wnba": {
+        "display": "WNBA",
+        "category": "major",
+        "vsin_slug": "wnba",
+        "sbd_slug": "wnba",         # SBD has /wnba/public-betting-trends/
+        "dk_network": False,        # DK Network dropdown doesn't include WNBA
+        "season": "May-Oct",
+        # WNBA shares the page layout with NBA; gamecode marker is "WNBA"
+        # which lets us reject any NBA rows the page might also show.
+        "gamecode_league": "WNBA",
     },
     "nhl": {
         "display": "NHL",
@@ -109,6 +124,7 @@ SPORT_INFO = {
         "dk_network": True,
         "dk_dropdown_label": "NHL",
         "season": "Oct-Jun",
+        "gamecode_league": "NHL",
     },
     "mlb": {
         "display": "MLB",
@@ -118,6 +134,7 @@ SPORT_INFO = {
         "dk_network": True,
         "dk_dropdown_label": "MLB",
         "season": "Mar-Oct",
+        "gamecode_league": "MLB",
     },
     "cfb": {
         "display": "College Football",
@@ -127,6 +144,7 @@ SPORT_INFO = {
         "dk_network": True,
         "dk_dropdown_label": "NCAA Football",
         "season": "Aug-Jan",
+        "gamecode_league": "NCAAF",
     },
     "cbb": {
         "display": "College Basketball (Men's)",
@@ -136,6 +154,7 @@ SPORT_INFO = {
         "dk_network": True,
         "dk_dropdown_label": "NCAA Basketball",
         "season": "Nov-Apr",
+        "gamecode_league": "NCAAB",
     },
     # --- Other Leagues (VSiN dropdown) ---
     "wcbb": {
@@ -889,11 +908,67 @@ def parse_vsin(html: str, source_key: str, sport: str) -> list[dict]:
     return _parse_vsin_legacy(html, source_key, sport)
 
 
+def _gamecode_cross_league_check(sport: str):
+    """Build a cross-league check for the given target sport.
+
+    Returns a tuple (is_foreign_gamecode, all_markers, own_marker):
+      - is_foreign_gamecode(gc): True if `gc` carries a league marker that
+        belongs to a DIFFERENT tracked sport than `sport`. False if the
+        gamecode matches our own marker, is unrecognized, or is empty.
+      - all_markers: set of every gamecode_league string in SPORT_INFO.
+      - own_marker: the marker for `sport` (empty if not declared).
+
+    Used by both the new sp-table parser and the legacy freezetable parser
+    to reject rows whose data-gamecode shows they came from the wrong
+    league (most commonly WNBA rows leaking onto /nba/betting-splits/).
+    Conservative: only rejects on POSITIVE evidence (the row's marker is
+    a known foreign league). Rows without a recognizable marker pass through.
+    """
+    info = SPORT_INFO.get(sport, {})
+    own_marker = info.get("gamecode_league", "")
+    all_markers = {
+        s_info["gamecode_league"]
+        for s_info in SPORT_INFO.values()
+        if s_info.get("gamecode_league")
+    }
+    # Longest-first so "WNBA" wins over "NBA" when scanning a gamecode prefix.
+    sorted_markers = sorted(all_markers, key=len, reverse=True)
+
+    def _extract_marker(gc: str) -> str:
+        if not gc:
+            return ""
+        m = re.match(r"^\d+([A-Z]+)", gc)
+        if not m:
+            return ""
+        alpha = m.group(1)
+        for marker in sorted_markers:
+            if alpha.startswith(marker):
+                return marker
+        return ""  # Unrecognized â€” treat as non-foreign
+
+    def is_foreign(gc: str) -> bool:
+        marker = _extract_marker(gc)
+        if not marker:
+            return False                  # No evidence â†’ keep the row
+        if own_marker:
+            return marker != own_marker   # We know our marker; reject mismatches
+        # No own marker declared (e.g. an "other" sport). Reject only if
+        # the row is positively identified as belonging to a different sport.
+        return marker in all_markers and marker != own_marker
+
+    return is_foreign, all_markers, own_marker
+
+
 def _parse_vsin_sp_table(soup, source_key: str, sport: str) -> list[dict]:
     """Parse VSiN's new sp-table layout (one row per team, paired by data-gamecode)."""
     now = now_eastern().isoformat()
     src = SOURCES[source_key]
     games = []
+
+    # Cross-league contamination filter (data-gamecode based). See
+    # _gamecode_cross_league_check for the full rationale.
+    is_foreign_gamecode, _all_markers, _own_marker = _gamecode_cross_league_check(sport)
+    rejected_other_league = 0
 
     MONTHS_RE = r"Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
 
@@ -937,6 +1012,13 @@ def _parse_vsin_sp_table(soup, source_key: str, sport: str) -> list[dict]:
             gamecode = gc_el.get("data-gamecode") if gc_el else None
             if not gamecode:
                 continue
+
+            # Cross-league filter: skip rows whose gamecode identifies a
+            # different tracked league.
+            if is_foreign_gamecode(gamecode):
+                rejected_other_league += 1
+                continue
+
             if gamecode not in by_game:
                 by_game[gamecode] = []
                 order.append(gamecode)
@@ -1009,6 +1091,11 @@ def _parse_vsin_sp_table(soup, source_key: str, sport: str) -> list[dict]:
             compute_signals(game)
             games.append(game)
 
+    if rejected_other_league:
+        print(f"  [{source_key}] Cross-league filter: rejected "
+              f"{rejected_other_league} row(s) whose data-gamecode "
+              f"belonged to a different league than {sport.upper()}.")
+
     return games
 
 
@@ -1018,6 +1105,22 @@ def _parse_vsin_legacy(html: str, source_key: str, sport: str) -> list[dict]:
     now = now_eastern().isoformat()
     src = SOURCES[source_key]
     games = []
+
+    # Cross-league contamination filter. Mirrors the new sp-table parser.
+    # The legacy freezetable layout MAY include a data-gamecode somewhere on
+    # the row (action button, inner span, etc.) â€” when present we use it to
+    # reject foreign-league rows. When absent we keep the row (no evidence).
+    is_foreign_gamecode, _all_markers, _own_marker = _gamecode_cross_league_check(sport)
+    rejected_other_league = 0
+
+    def _row_gamecode(row) -> str:
+        """Search a row for any data-gamecode attribute. Returns '' if none."""
+        # Check the row itself first, then any descendant element.
+        for el in [row, *row.find_all(attrs={"data-gamecode": True})]:
+            gc = el.get("data-gamecode") if hasattr(el, "get") else None
+            if gc:
+                return gc
+        return ""
 
     table = soup.select_one("table.freezetable")
     if not table:
@@ -1061,6 +1164,14 @@ def _parse_vsin_legacy(html: str, source_key: str, sport: str) -> list[dict]:
 
         tds = row.find_all("td")
         if len(tds) < 8:
+            continue
+
+        # Cross-league filter: if this row carries a data-gamecode and it
+        # belongs to a different tracked sport, skip it. Rows without a
+        # gamecode pass through to the existing extraction logic.
+        gc = _row_gamecode(row)
+        if gc and is_foreign_gamecode(gc):
+            rejected_other_league += 1
             continue
 
         # --- Extract team names from td[0] ---
@@ -1182,6 +1293,11 @@ def _parse_vsin_legacy(html: str, source_key: str, sport: str) -> list[dict]:
         # Compute derived signals
         compute_signals(game)
         games.append(game)
+
+    if rejected_other_league:
+        print(f"  [{source_key}] Cross-league filter (legacy): rejected "
+              f"{rejected_other_league} row(s) whose data-gamecode "
+              f"belonged to a different league than {sport.upper()}.")
 
     return games
 
@@ -1792,6 +1908,7 @@ _ESPN_SCHEDULE_URLS = {
     "nfl":     "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={date}&limit=200",
     "cfb":     "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates={date}&groups=80&limit=200",
     "nba":     "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date}&limit=200",
+    "wnba":    "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates={date}&limit=200",
     "cbb":     "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates={date}&groups=50&limit=200",
     "wcbb":    "https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard?dates={date}&groups=50&limit=200",
     "nhl":     "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates={date}&limit=200",
