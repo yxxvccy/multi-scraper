@@ -41,6 +41,7 @@
       cbb: "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard",
       wcbb: "https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard",
       nba: "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
+      wnba: "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard",
       nfl: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
       nhl: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",
       mlb: "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard",
@@ -62,7 +63,7 @@
 
     // Live data fetching from GitHub
     const GITHUB_RAW = "https://raw.githubusercontent.com/yxxvccy/multi-scraper/main/data";
-    const SCRAPE_SPORTS = ["cbb", "wcbb", "nba", "nfl", "nhl", "mlb", "epl", "ucl", "cfb", "cbase"];
+    const SCRAPE_SPORTS = ["cbb", "wcbb", "nba", "wnba", "nfl", "nhl", "mlb", "epl", "ucl", "cfb", "cbase"];
     const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
     function getDatesToFetch() {
       const dates = [], now = new Date();
