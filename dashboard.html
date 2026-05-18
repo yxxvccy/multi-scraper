@@ -552,15 +552,75 @@
       const tmrwStr=useMemo(()=>{const t=new Date();t.setDate(t.getDate()+1);return fmtDate(t);},[]);
       const availDates=useMemo(()=>[...new Set(games.map(g=>getGameDate(g)))].sort(),[games]);
 
+      // Cross-sport contamination filter (client-side defense).
+      //
+      // The scraper occasionally writes rows from one sport's page into another
+      // sport's CSV (when VSiN's tab switch silently fails and the page falls
+      // back to whatever sport is the current default). This guard catches
+      // those stale rows by cross-referencing each game's teams against
+      // ESPN's schedule for that game's declared sport+date.
+      //
+      // Decision matrix per row:
+      //   - ESPN cache MISSING for the (sport,date) key â†’ KEEP (don't reject
+      //     during the brief window before ESPN responds)
+      //   - ESPN cache HAS games for that sport+date AND row matches â†’ KEEP
+      //   - ESPN cache HAS games for that sport+date AND row does NOT match
+      //     AND row's teams DO match some OTHER sport's schedule â†’ DROP
+      //     (positive evidence of contamination)
+      //   - ESPN cache HAS games but row doesn't match, and no other sport
+      //     matches either â†’ KEEP (might be a minor team ESPN missed, or a
+      //     preseason game; benefit of the doubt)
+      //   - ESPN cache has ZERO games for that sport+date â†’ KEEP (off-season
+      //     or schedule not yet posted; can't tell)
+      const cleaned=useMemo(()=>{
+        if(!games.length)return games;
+        const cacheKeys=Object.keys(espnCache);
+        if(!cacheKeys.length)return games;  // nothing to check against yet
+        let dropped=0;
+        const result=games.filter(g=>{
+          const dt=getGameDate(g);
+          if(!dt)return true;
+          const ownSport=SPORT_ALIASES[g.sport]||g.sport;
+          const ownKey=`${ownSport}_${dt}`;
+          const ownEspn=espnCache[ownKey];
+          // No ESPN data loaded yet for this sport+date â†’ keep
+          if(!ownEspn)return true;
+          const ownGames=Object.values(ownEspn);
+          if(!ownGames.length)return true;  // off-season or no games today
+          // Does the row match any game on the correct sport's schedule?
+          const matchesOwn=ownGames.some(eg=>eg.aN.some(n=>fuzzy(g.away_team,n))&&eg.hN.some(n=>fuzzy(g.home_team,n)));
+          if(matchesOwn)return true;
+          // Row didn't match its declared sport. Check whether its teams
+          // match some OTHER tracked sport's schedule on the same date â€”
+          // if so, the row is contaminated and we drop it.
+          for(const key of cacheKeys){
+            if(key===ownKey)continue;
+            if(!key.endsWith(`_${dt}`))continue;
+            const otherEspn=espnCache[key];
+            if(!otherEspn)continue;
+            const otherGames=Object.values(otherEspn);
+            if(otherGames.some(eg=>eg.aN.some(n=>fuzzy(g.away_team,n))&&eg.hN.some(n=>fuzzy(g.home_team,n)))){
+              dropped++;
+              return false;
+            }
+          }
+          // Row doesn't match own schedule but no other-sport evidence either â€”
+          // keep it (might be minor school, preseason, etc.).
+          return true;
+        });
+        if(dropped>0)console.log(`[contamination filter] dropped ${dropped} cross-sport row(s)`);
+        return result;
+      },[games,espnCache]);
+
       const filtered=useMemo(()=>{
-        let f=games;
+        let f=cleaned;
         if(dateFilter==="today")f=f.filter(g=>getGameDate(g)===todayStr);
         else if(dateFilter==="tomorrow")f=f.filter(g=>getGameDate(g)===tmrwStr);
         if(sportFilter!=="all")f=f.filter(g=>g.sport===sportFilter);
         if(sourceFilter!=="all")f=f.filter(g=>g.source===sourceFilter);
         if(minSpreadDiv>0||minTotalDiv>0){f=f.filter(g=>{const sd=NUM(g.spread_bets_handle_divergence),td=NUM(g.total_bets_handle_divergence);if(minSpreadDiv>0&&minTotalDiv>0)return sd>=minSpreadDiv||td>=minTotalDiv;if(minSpreadDiv>0)return sd>=minSpreadDiv;if(minTotalDiv>0)return td>=minTotalDiv;return true;});}
         return f;
-      },[games,dateFilter,todayStr,tmrwStr,sportFilter,sourceFilter,minSpreadDiv,minTotalDiv]);
+      },[cleaned,dateFilter,todayStr,tmrwStr,sportFilter,sourceFilter,minSpreadDiv,minTotalDiv]);
 
       const maxDiv=useMemo(()=>{let m=0;filtered.forEach(g=>m=Math.max(m,NUM(g.spread_bets_handle_divergence),NUM(g.total_bets_handle_divergence)));return m;},[filtered]);
       const ranked=useMemo(()=>{
