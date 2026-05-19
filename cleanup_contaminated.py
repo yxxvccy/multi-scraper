@@ -2,26 +2,31 @@
 """
 cleanup_contaminated.py
 
-One-shot cleanup for cross-sport contamination already saved to disk.
+One-shot cleanup for two kinds of contamination already saved to disk:
 
-Background: prior to the data-gamecode cross-league filter, the scraper
-sometimes wrote rows from one sport's VSiN page into another sport's
-timeseries CSV (e.g. MLB games landing in wcbb_*.csv, epl_*.csv, etc.).
-This script walks every data/timeseries/<sport>_<date>.csv, checks each
-row's teams against ESPN's schedule for that <sport>+<date>, and drops
-rows whose teams unambiguously belong to a different tracked sport.
+  1. Cross-sport contamination: rows from one sport's VSiN page accidentally
+     written into another sport's CSV (e.g. MLB games landing in wcbb_*.csv,
+     epl_*.csv, etc.). Caused by VSiN's tab-switch silently failing.
+
+  2. Wrong-date contamination: rows where game_id encodes a date that
+     doesn't match when ESPN says the game is actually scheduled. Caused
+     by VSiN's stale/lingering page (yesterday's games still visible the
+     next morning) or premature listing (tomorrow's games under today).
+
+For each row we walk ESPN's schedule for the row's own sport across a small
+window of dates (date_in_filename ± 2 days). If we find the team pair, the
+row is "verified" and either kept (date matches) or migrated/dropped (date
+mismatch). If we don't find the team pair on the row's own sport, we probe
+other tracked sports â€” a positive match elsewhere is cross-contamination.
 
 Behavior:
-  - Conservative: a row is only dropped when its teams positively match
-    a DIFFERENT sport's ESPN schedule on the same date. Rows that don't
-    match anything stay in place.
-  - Dry-run by default. Pass --apply to write the changes.
-  - Prints a per-file summary of what would be removed.
+  - Conservative: rows with no positive ESPN evidence stay in place.
+  - Dry-run by default. Pass --apply to write changes.
 
 Usage:
-    python cleanup_contaminated.py             # dry run, print only
-    python cleanup_contaminated.py --apply     # write changes in place
-    python cleanup_contaminated.py --apply --backup    # also write *.bak
+    python cleanup_contaminated.py                  # dry run, print only
+    python cleanup_contaminated.py --apply          # write changes
+    python cleanup_contaminated.py --apply --backup # also write *.bak
 """
 from __future__ import annotations
 
@@ -32,6 +37,7 @@ import re
 import sys
 import time
 import urllib.request
+from datetime import datetime, timedelta
 from pathlib import Path
 from collections import defaultdict
 
@@ -55,9 +61,14 @@ ESPN_EP = {
     # would also fail to identify).
 }
 
+# How many days on either side of the file's nominal date to search ESPN.
+# We need a window because VSiN's stale-page bug can put a game in a CSV
+# named after a different date than the game's actual ET date.
+DATE_WINDOW_DAYS = 2
+
 
 def fetch_espn(sport: str, date: str) -> list[dict]:
-    """Return list of {away_names, home_names} dicts for sport+date."""
+    """Return list of {away, home} dicts for sport+date."""
     if sport not in ESPN_EP:
         return []
     url = f"{ESPN_EP[sport]}?dates={date}&limit=200"
@@ -126,6 +137,16 @@ def parse_filename(name: str) -> tuple[str, str] | None:
     return m.group(1), m.group(2)
 
 
+def date_window(center: str, days: int) -> list[str]:
+    """Return ['YYYYMMDD'] for center Â± days."""
+    try:
+        c = datetime.strptime(center, "%Y%m%d")
+    except ValueError:
+        return [center]
+    return [(c + timedelta(days=d)).strftime("%Y%m%d")
+            for d in range(-days, days + 1)]
+
+
 # Cache ESPN responses across the run
 _espn_cache: dict[tuple[str, str], list[dict]] = {}
 
@@ -133,8 +154,16 @@ def get_schedule(sport: str, date: str) -> list[dict]:
     key = (sport, date)
     if key not in _espn_cache:
         _espn_cache[key] = fetch_espn(sport, date)
-        time.sleep(0.2)  # be polite
+        time.sleep(0.2)  # be polite to ESPN
     return _espn_cache[key]
+
+
+def extract_game_id_date(game_id: str) -> str:
+    """game_id of form 'wnba_20260518_a_b' â†’ '20260518'. Empty if absent."""
+    if not game_id:
+        return ""
+    m = re.search(r"_(\d{8})_", game_id)
+    return m.group(1) if m else ""
 
 
 def main():
@@ -145,6 +174,9 @@ def main():
                         help="Write *.bak alongside modified files")
     parser.add_argument("--data-dir", default=str(DATA_DIR),
                         help=f"Path to timeseries dir (default: {DATA_DIR})")
+    parser.add_argument("--skip-date-check", action="store_true",
+                        help="Skip wrong-date checks; only catch cross-sport "
+                             "contamination (faster, fewer ESPN calls)")
     args = parser.parse_args()
 
     data_dir = Path(args.data_dir)
@@ -157,7 +189,9 @@ def main():
         print(f"No CSVs found in {data_dir}")
         return
 
-    total_in = total_kept = total_dropped = 0
+    total_in = total_kept = 0
+    drops_cross_sport = 0
+    drops_wrong_date = 0
     per_sport_drops: dict[str, int] = defaultdict(int)
 
     print(f"Scanning {len(files)} files in {data_dir} "
@@ -167,7 +201,7 @@ def main():
         info = parse_filename(path.name)
         if not info:
             continue
-        own_sport, date = info
+        own_sport, file_date = info
 
         with path.open("r", newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
@@ -177,9 +211,17 @@ def main():
         if not rows:
             continue
 
-        own_schedule = get_schedule(own_sport, date)
+        # Pre-fetch own-sport schedules across the date window
+        date_candidates = (
+            date_window(file_date, DATE_WINDOW_DAYS)
+            if not args.skip_date_check
+            else [file_date]
+        )
+        own_schedules = {d: get_schedule(own_sport, d) for d in date_candidates}
 
-        kept, dropped = [], []
+        kept = []
+        dropped_cross = []   # (row, target_sport)
+        dropped_date = []    # (row, actual_date, encoded_date)
         for r in rows:
             away = r.get("away_team", "")
             home = r.get("home_team", "")
@@ -187,45 +229,76 @@ def main():
                 kept.append(r)
                 continue
 
-            # 1) If teams match the row's OWN sport schedule â†’ keep.
-            if own_schedule and row_matches_schedule(away, home, own_schedule):
-                kept.append(r)
+            encoded_date = extract_game_id_date(r.get("game_id", ""))
+
+            # 1) Look for the game on own-sport schedule in the date window.
+            #    Record which date ESPN says it's on, if any.
+            espn_date_for_game = None
+            for d in date_candidates:
+                if row_matches_schedule(away, home, own_schedules.get(d, [])):
+                    espn_date_for_game = d
+                    break
+
+            if espn_date_for_game:
+                # Verified on own sport. Compare with the row's encoded date.
+                if (not args.skip_date_check
+                        and encoded_date
+                        and encoded_date != espn_date_for_game):
+                    # Wrong-date contamination: drop the row. (We'd rather
+                    # drop than rewrite â€” the row's `game_date` column may
+                    # also be wrong, and silent rewrites are dangerous.)
+                    dropped_date.append((r, espn_date_for_game, encoded_date))
+                    per_sport_drops[own_sport] += 1
+                else:
+                    kept.append(r)
                 continue
 
-            # 2) Teams don't match own. Probe other sports' schedules on
-            #    the same date. If a positive match is found in ANY other
-            #    tracked sport â†’ this row is contaminated; drop it.
+            # 2) Not on own-sport. Probe other sports for cross-contamination.
             contaminated_to = None
             for other_sport in ESPN_EP:
                 if other_sport == own_sport:
                     continue
-                other_schedule = get_schedule(other_sport, date)
-                if other_schedule and row_matches_schedule(away, home, other_schedule):
-                    contaminated_to = other_sport
+                for d in date_candidates:
+                    if row_matches_schedule(away, home, get_schedule(other_sport, d)):
+                        contaminated_to = other_sport
+                        break
+                if contaminated_to:
                     break
 
             if contaminated_to:
-                dropped.append((r, contaminated_to))
+                dropped_cross.append((r, contaminated_to))
                 per_sport_drops[own_sport] += 1
             else:
-                # No evidence either way (rare team, minor schedule, off-season).
-                # Keep, mirroring the dashboard's conservative behavior.
+                # No evidence either way â€” keep (rare team, minor schedule,
+                # off-season, preseason, etc.).
                 kept.append(r)
 
         total_in += len(rows)
         total_kept += len(kept)
-        total_dropped += len(dropped)
+        drops_cross_sport += len(dropped_cross)
+        drops_wrong_date += len(dropped_date)
 
-        if dropped:
-            print(f"  {path.name}: drop {len(dropped)}/{len(rows)} rows")
-            sample = defaultdict(list)
-            for r, target in dropped[:50]:
-                sample[target].append(f"{r.get('away_team')} @ {r.get('home_team')}")
-            for tgt, pairs in sample.items():
-                uniq = sorted(set(pairs))
-                shown = uniq[:3]
-                more = f" (+{len(uniq)-3} more)" if len(uniq) > 3 else ""
-                print(f"      â†’ {tgt}: {', '.join(shown)}{more}")
+        n_dropped = len(dropped_cross) + len(dropped_date)
+        if n_dropped:
+            print(f"  {path.name}: drop {n_dropped}/{len(rows)} rows "
+                  f"(cross-sport: {len(dropped_cross)}, wrong-date: {len(dropped_date)})")
+            if dropped_cross:
+                samples = defaultdict(set)
+                for r, target in dropped_cross[:50]:
+                    samples[target].add(f"{r.get('away_team')} @ {r.get('home_team')}")
+                for tgt, pairs in samples.items():
+                    shown = sorted(pairs)[:3]
+                    more = f" (+{len(pairs)-3} more)" if len(pairs) > 3 else ""
+                    print(f"      cross-sport â†’ {tgt}: {', '.join(shown)}{more}")
+            if dropped_date:
+                samples = defaultdict(set)
+                for r, actual, encoded in dropped_date[:50]:
+                    samples[(actual, encoded)].add(f"{r.get('away_team')} @ {r.get('home_team')}")
+                for (actual, encoded), pairs in samples.items():
+                    shown = sorted(pairs)[:3]
+                    more = f" (+{len(pairs)-3} more)" if len(pairs) > 3 else ""
+                    print(f"      wrong-date (file says {encoded}, ESPN says {actual}): "
+                          f"{', '.join(shown)}{more}")
 
             if args.apply:
                 if args.backup:
@@ -236,8 +309,10 @@ def main():
                     w.writeheader()
                     w.writerows(kept)
 
+    total_dropped = drops_cross_sport + drops_wrong_date
     print(f"\nSummary: scanned {total_in} rows â†’ kept {total_kept}, "
-          f"dropped {total_dropped}")
+          f"dropped {total_dropped} "
+          f"(cross-sport: {drops_cross_sport}, wrong-date: {drops_wrong_date})")
     if per_sport_drops:
         print("By contaminated source sport (the CSV being cleaned):")
         for sport, n in sorted(per_sport_drops.items(), key=lambda kv: -kv[1]):
@@ -249,3 +324,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
