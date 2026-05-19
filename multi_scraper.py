@@ -38,7 +38,7 @@ Usage:
 """
 
 import argparse, csv, json, os, re, sys, time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 try:
@@ -2105,6 +2105,99 @@ def _find_espn_start_utc(sport: str, away_team: str, home_team: str, date_str: s
     return None
 
 
+def _find_espn_et_date(sport: str, away_team: str, home_team: str,
+                      window_days: int = 1) -> str | None:
+    """
+    Search ESPN's schedule for a window around today (yesterday/today/tomorrow
+    by default) to find when a game is actually scheduled. Returns the game's
+    Eastern Time date as 'YYYYMMDD', or None if no match.
+
+    This is the authoritative-date helper used to correct VSiN's `game_date`
+    column. VSiN occasionally shows tomorrow's games under today's table
+    (or keeps yesterday's games visible), so trusting their `game_date`
+    leads to fragmented game_ids for the same game.
+    """
+    try:
+        from zoneinfo import ZoneInfo
+    except ImportError:
+        from backports.zoneinfo import ZoneInfo
+
+    et = ZoneInfo("America/New_York")
+    today = now_eastern()
+    candidates = []
+    for offset in range(-window_days, window_days + 1):
+        d = today + timedelta(days=offset)
+        candidates.append(d.strftime("%Y%m%d"))
+
+    for date_str in candidates:
+        start_utc = _find_espn_start_utc(sport, away_team, home_team, date_str)
+        if start_utc:
+            # Convert UTC start time to ET date (this is the "real" game date)
+            start_et = start_utc.astimezone(et)
+            return start_et.strftime("%Y%m%d")
+
+    return None
+
+
+def _yyyymmdd_to_display_date(yyyymmdd: str) -> str:
+    """Convert '20260519' â†’ 'May 19' format (matches VSiN's game_date column)."""
+    if not yyyymmdd or len(yyyymmdd) != 8:
+        return ""
+    try:
+        d = datetime.strptime(yyyymmdd, "%Y%m%d")
+        return d.strftime("%b %-d") if hasattr(d, "strftime") else f"{d.strftime('%b')} {d.day}"
+    except ValueError:
+        return ""
+
+
+def normalize_game_dates_with_espn(games: list[dict], sport: str) -> tuple[list[dict], int, int]:
+    """
+    For each game, overwrite VSiN's `game_date` with ESPN's authoritative
+    date if a match can be found. Also drop games whose ET date is in the
+    past relative to today_ET (VSiN's stale-page problem).
+
+    Returns: (kept_games, normalized_count, dropped_stale_count)
+    """
+    try:
+        from zoneinfo import ZoneInfo
+    except ImportError:
+        from backports.zoneinfo import ZoneInfo
+
+    et = ZoneInfo("America/New_York")
+    today_et_str = now_eastern().strftime("%Y%m%d")
+
+    kept = []
+    normalized = 0
+    dropped = 0
+
+    for g in games:
+        away = str(g.get("away_team", "")).strip()
+        home = str(g.get("home_team", "")).strip()
+        if not away or not home:
+            kept.append(g)
+            continue
+
+        espn_date = _find_espn_et_date(sport, away, home, window_days=2)
+
+        if espn_date:
+            # Update game_date to ESPN's authoritative ET date
+            new_display = _yyyymmdd_to_display_date(espn_date)
+            if new_display and new_display != g.get("game_date", ""):
+                normalized += 1
+                g["game_date"] = new_display
+
+            # Drop games whose ET date is BEFORE today (VSiN serving stale page)
+            if espn_date < today_et_str:
+                dropped += 1
+                continue
+        # If ESPN didn't recognize the game, keep the row as-is â€” we can't
+        # tell if it's stale or just a game ESPN doesn't have (rare team,
+        # preseason, international league).
+        kept.append(g)
+
+    return kept, normalized, dropped
+
+
 def _match_team_to_schedule(scraped_name: str, schedule_teams: set[str]) -> bool:
     """Check if a scraped team name matches any name in the ESPN schedule.
     Uses substring matching and spaceless matching to handle abbreviations
@@ -2264,6 +2357,25 @@ def scrape_source(source_key: str, sport: str, driver) -> list[dict]:
             games = check_contamination(sport, games, source_key=source_key)
             if not games:
                 print(f"  [{source_key}] All games rejected by contamination filter.")
+
+        # --- Date normalization + stale-page filter ---
+        # VSiN occasionally serves stale or future-dated games on a sport's
+        # page (e.g. yesterday's completed games still visible the next
+        # morning, or tomorrow's games listed under today's table). Look up
+        # each game's authoritative ET date from ESPN, overwrite game_date
+        # when ESPN disagrees, and drop games whose actual ET date is in
+        # the past (relative to today_ET).
+        if games:
+            try:
+                games, normalized, dropped_stale = normalize_game_dates_with_espn(games, sport)
+                if normalized:
+                    print(f"  [{source_key}] Normalized game_date for {normalized} game(s) using ESPN.")
+                if dropped_stale:
+                    print(f"  [{source_key}] Dropped {dropped_stale} stale (yesterday-or-earlier) game(s).")
+            except Exception as e:
+                # Never let date normalization kill the whole scrape â€”
+                # fall back to whatever VSiN said if ESPN lookups blow up.
+                print(f"  [{source_key}] Warning: date normalization failed: {e}")
 
         # Save raw HTML ONLY on parse failure (0 games) for debugging
         if not games:
