@@ -234,7 +234,7 @@
       const bySrc=rows.reduce((a,r)=>{const k=r.source;if(!a[k])a[k]=[];a[k].push(r);return a;},{});
       const srcs=Object.keys(bySrc);
       if(srcs.length<2)return null;
-      const last={};srcs.forEach(s=>{const h=bySrc[s].sort((a,b)=>(a.scrape_num||0)-(b.scrape_num||0));last[s]=h[h.length-1];});
+      const last={};srcs.forEach(s=>{const h=bySrc[s].sort((a,b)=>(a.timestamp||"").localeCompare(b.timestamp||""));last[s]=h[h.length-1];});
       const sL=sprLabel(sport), fL=spreadLabel(sport);
       function PctBar({val,color}){return(<div style={{marginTop:4,height:3,background:C.bdr,borderRadius:2,overflow:"hidden"}}><div style={{width:`${Math.min(100,val)}%`,height:"100%",background:color,borderRadius:2}}/></div>);}
       function BigPct({val,label,color,highlight}){return(<div style={{textAlign:"center",minWidth:52}}><div style={{fontSize:9,color:color,textTransform:"uppercase",letterSpacing:1,fontWeight:700,marginBottom:1}}>{label}</div><div style={{fontSize:22,fontWeight:800,fontFamily:MN,lineHeight:1,color:highlight?C.amb:C.tx}}>{val.toFixed(1)}<span style={{fontSize:12,fontWeight:600,color:highlight?C.amb:color}}>%</span></div><PctBar val={val} color={highlight?C.amb:color}/></div>);}
@@ -545,8 +545,13 @@
       },[filteredData]);
 
       const getESPN=useCallback(game=>{const dt=getGameDate(game),resolved=SPORT_ALIASES[game.sport]||game.sport,k=`${resolved}_${dt}`,eg=espnCache[k];return eg?matchESPN(game,eg):null;},[espnCache]);
-      const latestByGameSrc=useMemo(()=>{const m={};filteredData.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||r.scrape_num>m[k].scrape_num)m[k]=r;});return m;},[filteredData]);
-      const firstByGame=useMemo(()=>{const m={};filteredData.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||r.scrape_num<m[k].scrape_num)m[k]=r;});return m;},[filteredData]);
+      // Picks the most/least recent reading per (game_id, source) using
+      // timestamp (an ISO 8601 string that sorts lexicographically). We
+      // can't rely on `scrape_num` here because the scraper resets that
+      // counter to 1 at the start of every GitHub Actions run, so it's
+      // only valid within a single scrape, not across the day's data.
+      const latestByGameSrc=useMemo(()=>{const m={};filteredData.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||(r.timestamp||"")>(m[k].timestamp||""))m[k]=r;});return m;},[filteredData]);
+      const firstByGame=useMemo(()=>{const m={};filteredData.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||(r.timestamp||"")<(m[k].timestamp||""))m[k]=r;});return m;},[filteredData]);
       const games=useMemo(()=>Object.values(latestByGameSrc),[latestByGameSrc]);
       const todayStr=useMemo(()=>fmtDate(new Date()),[]);
       const tmrwStr=useMemo(()=>{const t=new Date();t.setDate(t.getDate()+1);return fmtDate(t);},[]);
@@ -649,7 +654,7 @@
 
       useEffect(()=>{if(!selectedGame)return;const sd=NUM(selectedGame.spread_bets_handle_divergence),td=NUM(selectedGame.total_bets_handle_divergence);setMetric(td>sd?"total":"spread");},[selectedId]);
 
-      const selectedHistory=useMemo(()=>{if(!selectedId)return[];const[gid,src]=selectedId.split("__");return filteredData.filter(r=>r.game_id===gid&&r.source===src).sort((a,b)=>(a.scrape_num||0)-(b.scrape_num||0));},[selectedId,filteredData]);
+      const selectedHistory=useMemo(()=>{if(!selectedId)return[];const[gid,src]=selectedId.split("__");return filteredData.filter(r=>r.game_id===gid&&r.source===src).sort((a,b)=>(a.timestamp||"").localeCompare(b.timestamp||""));},[selectedId,filteredData]);
       const selSrcCount=useMemo(()=>{if(!selectedGame)return 0;return new Set(filteredData.filter(r=>r.game_id===selectedGame.game_id).map(r=>r.source)).size;},[selectedGame,filteredData]);
 
       const [uploadMode,setUploadMode]=useState("merge");
