@@ -633,7 +633,17 @@
         return arr;
       },[filtered,sortBy,getESPN]);
 
-      const sports=useMemo(()=>[...new Set(games.map(g=>g.sport))].sort(),[games]);
+      // Show every configured sport as a filter button, even if no games
+      // are currently visible. This means WNBA (and other in-season-but-
+      // game-light sports) gets a tab even on days when the dashboard's
+      // current filter (date, divergence threshold, etc.) yields no rows.
+      // Sports present in `games` but missing from SCRAPE_SPORTS still show
+      // so we don't accidentally hide data we don't recognize.
+      const sports=useMemo(()=>{
+        const fromData=new Set(games.map(g=>g.sport));
+        const fromConfig=new Set(SCRAPE_SPORTS);
+        return [...new Set([...fromConfig, ...fromData])].sort();
+      },[games]);
       const sources=useMemo(()=>[...new Set(games.map(g=>g.source))].sort(),[games]);
       const selectedGame=useMemo(()=>selectedId?latestByGameSrc[selectedId]:null,[selectedId,latestByGameSrc]);
 
