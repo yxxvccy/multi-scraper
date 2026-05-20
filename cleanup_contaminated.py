@@ -177,6 +177,12 @@ def main():
     parser.add_argument("--skip-date-check", action="store_true",
                         help="Skip wrong-date checks; only catch cross-sport "
                              "contamination (faster, fewer ESPN calls)")
+    parser.add_argument("--date-check-days", type=int, default=14,
+                        help="Only run wrong-date checks on files within this "
+                             "many days of today (older files are skipped for "
+                             "the date check; default 14)")
+    parser.add_argument("--verbose", action="store_true",
+                        help="Print progress every N files")
     args = parser.parse_args()
 
     data_dir = Path(args.data_dir)
@@ -192,16 +198,40 @@ def main():
     total_in = total_kept = 0
     drops_cross_sport = 0
     drops_wrong_date = 0
+    drops_wrong_file = 0
     per_sport_drops: dict[str, int] = defaultdict(int)
 
-    print(f"Scanning {len(files)} files in {data_dir} "
-          f"({'APPLY mode' if args.apply else 'DRY RUN'})\n")
+    # Today's date for the "recent files only" date-check cutoff.
+    today_str = datetime.now().strftime("%Y%m%d")
 
-    for path in files:
+    print(f"Scanning {len(files)} files in {data_dir} "
+          f"({'APPLY mode' if args.apply else 'DRY RUN'})")
+    if not args.skip_date_check:
+        print(f"  Wrong-date checks limited to files within {args.date_check_days} "
+              f"days of today ({today_str}); older files do cross-sport only.")
+    print()
+
+    for file_idx, path in enumerate(files):
+        if args.verbose and file_idx and file_idx % 25 == 0:
+            print(f"  ... {file_idx}/{len(files)} files processed")
+
         info = parse_filename(path.name)
         if not info:
             continue
         own_sport, file_date = info
+
+        # Decide whether to run the slow wrong-date check on this file.
+        # Old files are very unlikely to have wrong-date contamination
+        # (that's a recent VSiN-page-stale problem), so skip the expensive
+        # ±2 day window for them and only check own date.
+        try:
+            file_d = datetime.strptime(file_date, "%Y%m%d")
+            age_days = abs((datetime.now() - file_d).days)
+        except ValueError:
+            age_days = 9999
+
+        do_date_check = (not args.skip_date_check
+                         and age_days <= args.date_check_days)
 
         with path.open("r", newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
@@ -211,28 +241,32 @@ def main():
         if not rows:
             continue
 
-        # Pre-fetch own-sport schedules across the date window
+        # Build the set of dates to probe ESPN for. For old files just check
+        # the file's own date; for recent files extend to a window.
         date_candidates = (
             date_window(file_date, DATE_WINDOW_DAYS)
-            if not args.skip_date_check
+            if do_date_check
             else [file_date]
         )
         own_schedules = {d: get_schedule(own_sport, d) for d in date_candidates}
 
-        kept = []
-        dropped_cross = []   # (row, target_sport)
-        dropped_date = []    # (row, actual_date, encoded_date)
+        # OPTIMIZATION: deduplicate rows by (away, home) before fuzzy-matching.
+        # The CSV has ~25 timeseries snapshots per (game, source) but the
+        # fuzzy-match result is identical for all of them. Decide once per
+        # team pair, then apply that decision to all rows for that pair.
+        team_pairs: dict[tuple[str, str], str] = {}
+        # values: "keep" | "drop_cross:<sport>" | "drop_date:<actual_date>"
+
         for r in rows:
             away = r.get("away_team", "")
             home = r.get("home_team", "")
             if not away or not home:
-                kept.append(r)
                 continue
+            key = (away, home)
+            if key in team_pairs:
+                continue  # already decided
 
-            encoded_date = extract_game_id_date(r.get("game_id", ""))
-
-            # 1) Look for the game on own-sport schedule in the date window.
-            #    Record which date ESPN says it's on, if any.
+            # 1) Probe own-sport schedule across date_candidates
             espn_date_for_game = None
             for d in date_candidates:
                 if row_matches_schedule(away, home, own_schedules.get(d, [])):
@@ -240,20 +274,10 @@ def main():
                     break
 
             if espn_date_for_game:
-                # Verified on own sport. Compare with the row's encoded date.
-                if (not args.skip_date_check
-                        and encoded_date
-                        and encoded_date != espn_date_for_game):
-                    # Wrong-date contamination: drop the row. (We'd rather
-                    # drop than rewrite â€” the row's `game_date` column may
-                    # also be wrong, and silent rewrites are dangerous.)
-                    dropped_date.append((r, espn_date_for_game, encoded_date))
-                    per_sport_drops[own_sport] += 1
-                else:
-                    kept.append(r)
+                team_pairs[key] = ("keep", espn_date_for_game)
                 continue
 
-            # 2) Not on own-sport. Probe other sports for cross-contamination.
+            # 2) Probe other sports for cross-contamination
             contaminated_to = None
             for other_sport in ESPN_EP:
                 if other_sport == own_sport:
@@ -266,22 +290,85 @@ def main():
                     break
 
             if contaminated_to:
-                dropped_cross.append((r, contaminated_to))
-                per_sport_drops[own_sport] += 1
+                team_pairs[key] = ("cross", contaminated_to)
             else:
-                # No evidence either way â€” keep (rare team, minor schedule,
-                # off-season, preseason, etc.).
+                team_pairs[key] = ("keep", None)  # unknown but kept
+
+        # Now apply the per-pair decision to every row.
+        kept = []
+        dropped_cross = []
+        dropped_date = []
+        dropped_wrong_file = []
+        for r in rows:
+            away = r.get("away_team", "")
+            home = r.get("home_team", "")
+            if not away or not home:
                 kept.append(r)
+                continue
+
+            encoded_date = extract_game_id_date(r.get("game_id", ""))
+
+            # 0) WRONG-FILE rule: row's game_id encodes a date EARLIER than
+            # the file's date AND the row was scraped late enough in the day
+            # that it can't be a legitimate closing snapshot of last night's
+            # game.
+            #
+            # Rationale:
+            #   - Past-dated rows captured 00:00â€“09:59 ET are usually
+            #     legitimate late-night closing snapshots â€” VSiN serves
+            #     yesterday's late slate until ~early morning the next day.
+            #     These rows are valuable backtesting data (closing splits
+            #     of completed games) and should NOT be dropped.
+            #   - Past-dated rows captured 10:00 ET onwards are almost
+            #     certainly the stale-page bug â€” by mid-morning VSiN has
+            #     rolled over to today's slate, so any row still claiming
+            #     to be about a past date is the bug.
+            #
+            # We also do NOT drop rows whose game_id encodes a date LATER
+            # than file date â€” those are legitimate next-day-preview rows.
+            if encoded_date and encoded_date < file_date:
+                ts_str = r.get("timestamp", "")
+                # Pull the HH from ISO format "YYYY-MM-DDTHH:MM:SS..."
+                hour = 99
+                if "T" in ts_str and len(ts_str) >= 13:
+                    try:
+                        hour = int(ts_str[11:13])
+                    except ValueError:
+                        pass
+                if hour >= 10:
+                    dropped_wrong_file.append((r, encoded_date))
+                    per_sport_drops[own_sport] += 1
+                    continue
+
+            decision = team_pairs.get((away, home), ("keep", None))
+            kind, info_val = decision
+
+            if kind == "cross":
+                dropped_cross.append((r, info_val))
+                per_sport_drops[own_sport] += 1
+                continue
+
+            if kind == "keep" and info_val and do_date_check:
+                # Wrong-date check: encoded date in game_id vs ESPN-confirmed date
+                if encoded_date and encoded_date != info_val:
+                    dropped_date.append((r, info_val, encoded_date))
+                    per_sport_drops[own_sport] += 1
+                    continue
+
+            kept.append(r)
 
         total_in += len(rows)
         total_kept += len(kept)
         drops_cross_sport += len(dropped_cross)
         drops_wrong_date += len(dropped_date)
+        drops_wrong_file += len(dropped_wrong_file)
 
-        n_dropped = len(dropped_cross) + len(dropped_date)
+        n_dropped = len(dropped_cross) + len(dropped_date) + len(dropped_wrong_file)
         if n_dropped:
             print(f"  {path.name}: drop {n_dropped}/{len(rows)} rows "
-                  f"(cross-sport: {len(dropped_cross)}, wrong-date: {len(dropped_date)})")
+                  f"(cross-sport: {len(dropped_cross)}, "
+                  f"wrong-date: {len(dropped_date)}, "
+                  f"wrong-file: {len(dropped_wrong_file)})")
             if dropped_cross:
                 samples = defaultdict(set)
                 for r, target in dropped_cross[:50]:
@@ -299,6 +386,15 @@ def main():
                     more = f" (+{len(pairs)-3} more)" if len(pairs) > 3 else ""
                     print(f"      wrong-date (file says {encoded}, ESPN says {actual}): "
                           f"{', '.join(shown)}{more}")
+            if dropped_wrong_file:
+                samples = defaultdict(set)
+                for r, encoded in dropped_wrong_file[:50]:
+                    samples[encoded].add(f"{r.get('away_team')} @ {r.get('home_team')}")
+                for encoded, pairs in samples.items():
+                    shown = sorted(pairs)[:3]
+                    more = f" (+{len(pairs)-3} more)" if len(pairs) > 3 else ""
+                    print(f"      wrong-file (game_id says {encoded}, file is {file_date}): "
+                          f"{', '.join(shown)}{more}")
 
             if args.apply:
                 if args.backup:
@@ -309,10 +405,12 @@ def main():
                     w.writeheader()
                     w.writerows(kept)
 
-    total_dropped = drops_cross_sport + drops_wrong_date
+    total_dropped = drops_cross_sport + drops_wrong_date + drops_wrong_file
     print(f"\nSummary: scanned {total_in} rows â†’ kept {total_kept}, "
           f"dropped {total_dropped} "
-          f"(cross-sport: {drops_cross_sport}, wrong-date: {drops_wrong_date})")
+          f"(cross-sport: {drops_cross_sport}, "
+          f"wrong-date: {drops_wrong_date}, "
+          f"wrong-file: {drops_wrong_file})")
     if per_sport_drops:
         print("By contaminated source sport (the CSV being cleaned):")
         for sport, n in sorted(per_sport_drops.items(), key=lambda kv: -kv[1]):
