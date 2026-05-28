@@ -1,8 +1,44 @@
 name: Scheduled Scrape
 
+# ---------------------------------------------------------------------------
+# Schedule strategy
+# ---------------------------------------------------------------------------
+# GitHub throttles scheduled workflows hardest at popular cron times (top of
+# the hour, :30). To maximize the chance each run actually fires, we:
+#   1. Schedule only a few targeted windows per day (not every 30 min).
+#   2. Use OFF-PEAK minutes (:07, :21, :53) to dodge congestion.
+#   3. Fire TWICE per window (~14 min apart) for redundancy - if GitHub
+#      skips one, the other usually lands. Duplicate successes are harmless;
+#      the timeseries just records an extra snapshot a few minutes apart.
+#
+# Target windows (Eastern Time) and their purpose:
+#   ~12:00 PM ET  midday snapshot (lines posted, nothing started)
+#   ~4:00  PM ET  afternoon snapshot
+#   ~6:15  PM ET  closing capture for primetime games (6:35/6:40 starts)
+#   ~9:15  PM ET  closing capture for West-Coast games (9:40 starts)
+#
+# IMPORTANT - DAYLIGHT SAVING: GitHub cron is always UTC and does NOT observe
+# US daylight saving. The UTC times below are correct for EDT (mid-Mar to
+# early-Nov). When the US switches to EST in November, ET will be UTC-5 and
+# every window will land one hour EARLIER in ET. To keep these windows at the
+# same ET clock times in winter, ADD 1 hour to each UTC cron below (e.g.
+# 15:53 -> 16:53). Revisit at the next DST change.
+# ---------------------------------------------------------------------------
+
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    # Noon ET window (16:00 UTC during EDT)
+    - cron: '53 15 * * *'   # 11:53 AM ET
+    - cron: '7 16 * * *'    # 12:07 PM ET
+    # 4 PM ET window (20:00 UTC during EDT)
+    - cron: '53 19 * * *'   #  3:53 PM ET
+    - cron: '7 20 * * *'    #  4:07 PM ET
+    # 6:15 PM ET window - primetime closing capture (22:15 UTC during EDT)
+    - cron: '7 22 * * *'    #  6:07 PM ET
+    - cron: '21 22 * * *'   #  6:21 PM ET
+    # 9:15 PM ET window - West-Coast closing capture (01:15 UTC next day during EDT)
+    - cron: '7 1 * * *'     #  9:07 PM ET (previous day)
+    - cron: '21 1 * * *'    #  9:21 PM ET (previous day)
   workflow_dispatch:
 
 jobs:
@@ -25,7 +61,7 @@ jobs:
       - name: Run scraper
         env:
           TZ: America/New_York
-        run: python multi_scraper.py --batch cbb wcbb cbase chockey mlb epl ucl nba wnba --once --auto-close 30
+        run: python multi_scraper.py --batch cbb wcbb cbase chockey mlb epl ucl nba wnba --once --auto-close 45
 
       - name: Upload raw HTML for debugging
         if: always()
