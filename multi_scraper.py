@@ -913,16 +913,36 @@ def _gamecode_cross_league_check(sport: str):
 
     Returns a tuple (is_foreign_gamecode, all_markers, own_marker):
       - is_foreign_gamecode(gc): True if `gc` carries a league marker that
-        belongs to a DIFFERENT tracked sport than `sport`. False if the
-        gamecode matches our own marker, is unrecognized, or is empty.
+        belongs to a DIFFERENT league than `sport`.
       - all_markers: set of every gamecode_league string in SPORT_INFO.
       - own_marker: the marker for `sport` (empty if not declared).
 
     Used by both the new sp-table parser and the legacy freezetable parser
     to reject rows whose data-gamecode shows they came from the wrong
-    league (most commonly WNBA rows leaking onto /nba/betting-splits/).
-    Conservative: only rejects on POSITIVE evidence (the row's marker is
-    a known foreign league). Rows without a recognizable marker pass through.
+    league.
+
+    Two-mode behaviour:
+
+    STRICT MODE â€” when the target `sport` has its own declared marker
+    (e.g. MLB, NBA, WNBA): we know exactly what gamecode prefix we want
+    ("MLB", "NBA", "WNBA"...). Any row whose gamecode contains a
+    recognizable alpha prefix that ISN'T ours is foreign and gets dropped.
+    This includes:
+      - Known tracked leagues (NBA vs WNBA, MLB vs CBASE, etc.)
+      - Known untracked leagues (UFL, XFL, USFL, CFL, AAF, soccer codes â€”
+        these show up when VSiN's page silently falls back to whatever
+        the book offers, e.g. Circa serving UFL on its MLB page during
+        MLB lulls).
+      - Unrecognized but obvious league codes (3+ uppercase letters).
+        Conservative even here: anything starting with our own marker as
+        a prefix (e.g. "MLBpre") is still considered ours.
+
+    LENIENT MODE â€” when the target `sport` has NO declared marker (rare;
+    only the legacy "other" sports like wcbb/cbase/chockey/epl/ucl whose
+    gamecode format varies): reject only rows positively identified as
+    a DIFFERENT tracked sport. Untracked markers (UFL etc.) pass through
+    because we can't know whether they're contamination or expected for
+    that sport.
     """
     info = SPORT_INFO.get(sport, {})
     own_marker = info.get("gamecode_league", "")
@@ -934,27 +954,37 @@ def _gamecode_cross_league_check(sport: str):
     # Longest-first so "WNBA" wins over "NBA" when scanning a gamecode prefix.
     sorted_markers = sorted(all_markers, key=len, reverse=True)
 
-    def _extract_marker(gc: str) -> str:
+    def _extract_alpha_prefix(gc: str) -> str:
+        """Pull the leading alpha-prefix (after the date digits)."""
         if not gc:
             return ""
         m = re.match(r"^\d+([A-Z]+)", gc)
-        if not m:
+        return m.group(1) if m else ""
+
+    def _matches_known_marker(alpha: str) -> str:
+        """Return the known marker that's a prefix of `alpha`, or ''."""
+        if not alpha:
             return ""
-        alpha = m.group(1)
         for marker in sorted_markers:
             if alpha.startswith(marker):
                 return marker
-        return ""  # Unrecognized â€” treat as non-foreign
+        return ""
 
     def is_foreign(gc: str) -> bool:
-        marker = _extract_marker(gc)
-        if not marker:
-            return False                  # No evidence â†’ keep the row
+        alpha = _extract_alpha_prefix(gc)
+        if not alpha:
+            return False  # No alpha prefix at all â†’ no evidence, keep
+
         if own_marker:
-            return marker != own_marker   # We know our marker; reject mismatches
-        # No own marker declared (e.g. an "other" sport). Reject only if
-        # the row is positively identified as belonging to a different sport.
-        return marker in all_markers and marker != own_marker
+            # STRICT: anything not starting with our own marker is foreign.
+            # Covers known foreign leagues (NBA on WNBA page), and unknown
+            # foreign leagues (UFL on MLB page) â€” the latter is the May 2026
+            # case where Circa's MLB URL started serving UFL content.
+            return not alpha.startswith(own_marker)
+        else:
+            # LENIENT: reject only known foreign markers; let unknowns pass.
+            matched = _matches_known_marker(alpha)
+            return bool(matched) and matched != own_marker
 
     return is_foreign, all_markers, own_marker
 
