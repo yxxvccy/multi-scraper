@@ -502,7 +502,63 @@ def fetch_vsin(url: str, driver, sport: str, source_key: str = "", wait_seconds:
     else:
         time.sleep(wait_seconds)
 
+    # --- Scroll to force lazy-loaded rows to render ---
+    # VSiN's splits table renders incrementally: only the first handful of
+    # games (~6) are in the DOM on initial load, and the rest appear as you
+    # scroll down. Grabbing page_source too early captures only that first
+    # chunk. Scroll repeatedly until the rendered row count stops growing.
+    _vsin_scroll_until_stable(driver)
+
     return driver.page_source
+
+
+def _vsin_scroll_until_stable(driver, max_scrolls: int = 25, pause: float = 0.6):
+    """Scroll the page down repeatedly until the number of rendered splits
+    rows stops increasing, so lazy-loaded games all enter the DOM before we
+    capture page_source.
+
+    Counts rows matching the new sp-table layout (tr.sp-row) and the legacy
+    layout (table.freezetable tr); uses whichever is larger. Stops when the
+    count is unchanged across two consecutive scrolls, or max_scrolls is hit.
+    """
+    from selenium.webdriver.common.by import By
+
+    def _count_rows() -> int:
+        try:
+            sp = len(driver.find_elements(By.CSS_SELECTOR, "tr.sp-row"))
+        except Exception:
+            sp = 0
+        try:
+            legacy = len(driver.find_elements(By.CSS_SELECTOR, "table.freezetable tr"))
+        except Exception:
+            legacy = 0
+        return max(sp, legacy)
+
+    last_count = _count_rows()
+    stable_rounds = 0
+    for _ in range(max_scrolls):
+        try:
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        except Exception:
+            break
+        time.sleep(pause)
+        count = _count_rows()
+        if count <= last_count:
+            stable_rounds += 1
+            # Require two consecutive no-growth rounds before concluding the
+            # table is fully loaded (one round can be a momentary render gap).
+            if stable_rounds >= 2:
+                break
+        else:
+            stable_rounds = 0
+        last_count = count
+
+    # Scroll back to top so any post-processing that interacts with the page
+    # (e.g. book/tab toggles in subsequent calls) starts from a known state.
+    try:
+        driver.execute_script("window.scrollTo(0, 0);")
+    except Exception:
+        pass
 
 
 def _vsin_ensure_book(driver, book: str, source_key: str = ""):
@@ -923,13 +979,13 @@ def _gamecode_cross_league_check(sport: str):
 
     Two-mode behaviour:
 
-    STRICT MODE â€” when the target `sport` has its own declared marker
+    STRICT MODE - when the target `sport` has its own declared marker
     (e.g. MLB, NBA, WNBA): we know exactly what gamecode prefix we want
     ("MLB", "NBA", "WNBA"...). Any row whose gamecode contains a
     recognizable alpha prefix that ISN'T ours is foreign and gets dropped.
     This includes:
       - Known tracked leagues (NBA vs WNBA, MLB vs CBASE, etc.)
-      - Known untracked leagues (UFL, XFL, USFL, CFL, AAF, soccer codes â€”
+      - Known untracked leagues (UFL, XFL, USFL, CFL, AAF, soccer codes -
         these show up when VSiN's page silently falls back to whatever
         the book offers, e.g. Circa serving UFL on its MLB page during
         MLB lulls).
@@ -937,7 +993,7 @@ def _gamecode_cross_league_check(sport: str):
         Conservative even here: anything starting with our own marker as
         a prefix (e.g. "MLBpre") is still considered ours.
 
-    LENIENT MODE â€” when the target `sport` has NO declared marker (rare;
+    LENIENT MODE - when the target `sport` has NO declared marker (rare;
     only the legacy "other" sports like wcbb/cbase/chockey/epl/ucl whose
     gamecode format varies): reject only rows positively identified as
     a DIFFERENT tracked sport. Untracked markers (UFL etc.) pass through
@@ -973,12 +1029,12 @@ def _gamecode_cross_league_check(sport: str):
     def is_foreign(gc: str) -> bool:
         alpha = _extract_alpha_prefix(gc)
         if not alpha:
-            return False  # No alpha prefix at all â†’ no evidence, keep
+            return False  # No alpha prefix at all -> no evidence, keep
 
         if own_marker:
             # STRICT: anything not starting with our own marker is foreign.
             # Covers known foreign leagues (NBA on WNBA page), and unknown
-            # foreign leagues (UFL on MLB page) â€” the latter is the May 2026
+            # foreign leagues (UFL on MLB page) - the latter is the May 2026
             # case where Circa's MLB URL started serving UFL content.
             return not alpha.startswith(own_marker)
         else:
