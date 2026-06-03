@@ -2191,17 +2191,55 @@ def _find_espn_start_utc(sport: str, away_team: str, home_team: str, date_str: s
     return None
 
 
+def _vsin_display_to_yyyymmdd(display: str) -> str:
+    """Convert VSiN's 'Jun 2' / 'May 31' game_date to 'YYYYMMDD', inferring
+    the year from today (handles Dec->Jan rollover). Returns '' if unparseable."""
+    if not display:
+        return ""
+    m = re.search(r"([A-Za-z]{3})\s+(\d{1,2})", display)
+    if not m:
+        return ""
+    mon_abbr, day = m.group(1).title(), int(m.group(2))
+    months = {"Jan":1,"Feb":2,"Mar":3,"Apr":4,"May":5,"Jun":6,
+              "Jul":7,"Aug":8,"Sep":9,"Oct":10,"Nov":11,"Dec":12}
+    mon = months.get(mon_abbr)
+    if not mon:
+        return ""
+    today = now_eastern()
+    year = today.year
+    # Handle year rollover: if VSiN says "Jan" but it's currently December,
+    # the game is next year (and vice versa).
+    if mon == 1 and today.month == 12:
+        year += 1
+    elif mon == 12 and today.month == 1:
+        year -= 1
+    try:
+        return datetime(year, mon, day).strftime("%Y%m%d")
+    except ValueError:
+        return ""
+
+
 def _find_espn_et_date(sport: str, away_team: str, home_team: str,
-                      window_days: int = 1) -> str | None:
+                      window_days: int = 1, anchor_yyyymmdd: str = "") -> str | None:
     """
-    Search ESPN's schedule for a window around today (yesterday/today/tomorrow
-    by default) to find when a game is actually scheduled. Returns the game's
-    Eastern Time date as 'YYYYMMDD', or None if no match.
+    Search ESPN's schedule for a window around an anchor date to find when a
+    game is actually scheduled. Returns the game's Eastern Time date as
+    'YYYYMMDD', or None if no match.
+
+    The anchor defaults to today, but callers should pass VSiN's stated
+    game_date (converted to YYYYMMDD) when available - this is critical for
+    multi-game series. Teams play the same opponent on consecutive days, so
+    the same matchup appears on ESPN for 3+ dates. Anchoring the search at
+    VSiN's stated date and searching NEAREST-FIRST picks the correct game in
+    the series rather than the first chronological match.
+
+    Without a correct anchor, an earlier version matched the first day of a
+    series and mislabeled today's game as a past date, then wrongly dropped
+    it as "stale" - which is why ~18 of 30 MLB games vanished on 2026-06-02.
 
     This is the authoritative-date helper used to correct VSiN's `game_date`
     column. VSiN occasionally shows tomorrow's games under today's table
-    (or keeps yesterday's games visible), so trusting their `game_date`
-    leads to fragmented game_ids for the same game.
+    (or keeps yesterday's games visible).
     """
     try:
         from zoneinfo import ZoneInfo
@@ -2209,16 +2247,28 @@ def _find_espn_et_date(sport: str, away_team: str, home_team: str,
         from backports.zoneinfo import ZoneInfo
 
     et = ZoneInfo("America/New_York")
-    today = now_eastern()
-    candidates = []
-    for offset in range(-window_days, window_days + 1):
-        d = today + timedelta(days=offset)
-        candidates.append(d.strftime("%Y%m%d"))
 
-    for date_str in candidates:
+    # Anchor the search. Prefer VSiN's stated date; fall back to today.
+    anchor = None
+    if anchor_yyyymmdd and len(anchor_yyyymmdd) == 8:
+        try:
+            anchor = datetime.strptime(anchor_yyyymmdd, "%Y%m%d")
+        except ValueError:
+            anchor = None
+    if anchor is None:
+        anchor = now_eastern()
+
+    # Build offsets ordered by distance from the anchor: 0, +1, -1, +2, -2...
+    offsets = [0]
+    for d in range(1, window_days + 1):
+        offsets.append(d)
+        offsets.append(-d)
+
+    for offset in offsets:
+        date_obj = anchor + timedelta(days=offset)
+        date_str = date_obj.strftime("%Y%m%d")
         start_utc = _find_espn_start_utc(sport, away_team, home_team, date_str)
         if start_utc:
-            # Convert UTC start time to ET date (this is the "real" game date)
             start_et = start_utc.astimezone(et)
             return start_et.strftime("%Y%m%d")
 
@@ -2263,7 +2313,12 @@ def normalize_game_dates_with_espn(games: list[dict], sport: str) -> tuple[list[
             kept.append(g)
             continue
 
-        espn_date = _find_espn_et_date(sport, away, home, window_days=2)
+        # Anchor the ESPN date search at VSiN's stated game_date so that
+        # multi-game series resolve to the correct day rather than the first
+        # day of the series.
+        anchor = _vsin_display_to_yyyymmdd(g.get("game_date", ""))
+        espn_date = _find_espn_et_date(sport, away, home,
+                                       window_days=2, anchor_yyyymmdd=anchor)
 
         if espn_date:
             # Update game_date to ESPN's authoritative ET date
