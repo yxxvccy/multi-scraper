@@ -16,3 +16,7 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-07-23T17:25:32.450284-04:00,vsin_dk,draftkings,wnba,wnba_20260728_toronto_tempo_minnesota_lynx,Jul 28,,Toronto Tempo,Minnesota Lynx,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,100.0,0.0,100.0,,,,,1,,,,,,,,,,,,
 2026-07-23T17:25:32.450284-04:00,vsin_dk,draftkings,wnba,wnba_20260728_indiana_fever_seattle_storm,Jul 28,,Indiana Fever,Seattle Storm,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,100.0,0.0,100.0,0.0,,,,,1,,,,,,,,,,,,
 2026-07-23T17:25:32.450284-04:00,vsin_dk,draftkings,wnba,wnba_20260728_portland_fire_las_vegas_aces,Jul 28,,Portland Fire,Las Vegas Aces,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,100.0,0.0,100.0,,,,,1,,,,,,,,,,,,
+2026-07-23T19:16:35.431442-04:00,vsin_dk,draftkings,wnba,wnba_20260728_connecticut_sun_washington_mystics,Jul 28,,Connecticut Sun,Washington Mystics,,0.0,0.0,0.0,0.0,157.5,100.0,0.0,100.0,0.0,0.0,100.0,0.0,100.0,,0.0,,False,1,,,,,,,,,,,,
+2026-07-23T19:16:35.431442-04:00,vsin_dk,draftkings,wnba,wnba_20260728_toronto_tempo_minnesota_lynx,Jul 28,,Toronto Tempo,Minnesota Lynx,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,100.0,0.0,100.0,,,,,1,,,,,,,,,,,,
+2026-07-23T19:16:35.431442-04:00,vsin_dk,draftkings,wnba,wnba_20260728_indiana_fever_seattle_storm,Jul 28,,Indiana Fever,Seattle Storm,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,100.0,0.0,100.0,0.0,,,,,1,,,,,,,,,,,,
+2026-07-23T19:16:35.431442-04:00,vsin_dk,draftkings,wnba,wnba_20260728_portland_fire_las_vegas_aces,Jul 28,,Portland Fire,Las Vegas Aces,,0.0,0.0,0.0,0.0,,0.0,0.0,0.0,0.0,0.0,100.0,0.0,100.0,,,,,1,,,,,,,,,,,,
