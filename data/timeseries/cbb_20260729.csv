@@ -2,3 +2,4 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-07-29T00:27:47.321230-04:00,vsin_circa,circa,cbb,cbb_20260729_cleveland_guardiansg2_cleveland_guardians,,,Cleveland GuardiansG2,Cleveland Guardians,2.0,100.0,100.0,78.0,40.0,100.0,84.0,56.0,,,,,,,60.0,,True,,1,,,,,,,,,,,,
 2026-07-29T13:00:15.386990-04:00,vsin_circa,circa,cbb,cbb_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,50.0,50.0,0.0,0.0,50.0,15.0,88.0,,,,,,,,,,,1,,,,,,,,,,,,
 2026-07-29T13:35:10.824370-04:00,vsin_circa,circa,cbb,cbb_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,50.0,50.0,0.0,0.0,50.0,15.0,88.0,,,,,,,,,,,1,,,,,,,,,,,,
+2026-07-29T16:40:05.210217-04:00,vsin_circa,circa,cbb,cbb_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,50.0,50.0,50.0,50.0,50.0,42.0,88.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
