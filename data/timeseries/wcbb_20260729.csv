@@ -11,3 +11,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-07-29T17:11:38.811315-04:00,vsin_circa,circa,wcbb,wcbb_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,50.0,50.0,50.0,50.0,50.0,48.0,89.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-07-29T19:13:05.180329-04:00,vsin_dk,draftkings,wcbb,wcbb_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,89.0,70.0,71.0,59.0,89.0,97.0,88.0,,,,,,,11.0,,False,,1,,,,,,,,,,,,
 2026-07-29T19:13:51.688978-04:00,vsin_circa,circa,wcbb,wcbb_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,100.0,100.0,95.0,67.0,100.0,70.0,93.0,,,,,,,33.0,,True,,1,,,,,,,,,,,,
+2026-07-29T19:28:15.680445-04:00,vsin_dk,draftkings,wcbb,wcbb_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,89.0,70.0,71.0,59.0,89.0,97.0,88.0,,,,,,,11.0,,False,,1,,,,,,,,,,,,
+2026-07-29T19:28:58.560311-04:00,vsin_circa,circa,wcbb,wcbb_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,100.0,100.0,95.0,67.0,100.0,70.0,93.0,,,,,,,33.0,,True,,1,,,,,,,,,,,,
