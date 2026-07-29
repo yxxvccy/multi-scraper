@@ -3,3 +3,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-07-29T00:33:56.438261-04:00,vsin_circa,circa,ucl,ucl_20260729_cleveland_guardiansg2_cleveland_guardians,,,Cleveland GuardiansG2,Cleveland Guardians,2.0,100.0,100.0,78.0,40.0,100.0,84.0,56.0,,,,,,,60.0,,True,,1,,,,,,,,,,,,
 2026-07-29T13:04:33.962206-04:00,vsin_dk,draftkings,ucl,ucl_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,100.0,67.0,72.0,56.0,100.0,91.0,91.0,,,,,,,11.0,,False,,1,,,,,,,,,,,,
 2026-07-29T13:04:54.677367-04:00,vsin_circa,circa,ucl,ucl_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,50.0,50.0,0.0,0.0,50.0,15.0,88.0,,,,,,,,,,,1,,,,,,,,,,,,
+2026-07-29T13:39:55.481524-04:00,vsin_dk,draftkings,ucl,ucl_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,100.0,68.0,100.0,61.0,100.0,92.0,91.0,,,,,,,7.0,,False,,1,,,,,,,,,,,,
+2026-07-29T13:40:17.592136-04:00,vsin_circa,circa,ucl,ucl_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,50.0,50.0,0.0,0.0,50.0,15.0,88.0,,,,,,,,,,,1,,,,,,,,,,,,
