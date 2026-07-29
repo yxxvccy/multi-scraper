@@ -9,3 +9,5 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-07-29T16:45:09.658469-04:00,vsin_circa,circa,epl,epl_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,50.0,50.0,50.0,50.0,50.0,44.0,89.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-07-29T17:14:29.140416-04:00,vsin_dk,draftkings,epl,epl_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,87.0,62.0,95.0,62.0,87.0,97.0,90.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-07-29T17:14:52.487333-04:00,vsin_circa,circa,epl,epl_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,50.0,50.0,50.0,50.0,50.0,48.0,89.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
+2026-07-29T19:17:07.776766-04:00,vsin_dk,draftkings,epl,epl_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,89.0,70.0,71.0,59.0,89.0,97.0,88.0,,,,,,,11.0,,False,,1,,,,,,,,,,,,
+2026-07-29T19:17:32.248301-04:00,vsin_circa,circa,epl,epl_20260729_atlanta_bravesg2_atlanta_braves,,,Atlanta BravesG2,Atlanta Braves,2.0,100.0,100.0,95.0,67.0,100.0,70.0,93.0,,,,,,,33.0,,True,,1,,,,,,,,,,,,
