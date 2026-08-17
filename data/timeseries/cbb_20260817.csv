@@ -3,3 +3,4 @@ timestamp,source,book,sport,game_id,game_date,game_time,away_team,home_team,spre
 2026-08-17T12:42:34.996504-04:00,vsin_circa,circa,cbb,cbb_20260817_st_louis_cardinalsg2_st_louis_cardinals,,,ST Louis CardinalsG2,ST Louis Cardinals,2.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,,,,,,,0.0,,False,,1,,,,,,,,,,,,
 2026-08-17T16:04:40.406468-04:00,vsin_circa,circa,cbb,cbb_20260817_st_louis_cardinalsg2_st_louis_cardinals,,,ST Louis CardinalsG2,ST Louis Cardinals,2.0,100.0,100.0,85.0,83.0,100.0,100.0,100.0,,,,,,,17.0,,True,,1,,,,,,,,,,,,
 2026-08-17T16:38:59.499248-04:00,vsin_circa,circa,cbb,cbb_20260817_st_louis_cardinalsg2_st_louis_cardinals,,,ST Louis CardinalsG2,ST Louis Cardinals,2.0,100.0,100.0,86.0,86.0,100.0,99.0,90.0,,,,,,,14.0,,False,,1,,,,,,,,,,,,
+2026-08-17T18:37:28.235174-04:00,vsin_circa,circa,cbb,cbb_20260817_st_louis_cardinalsg2_st_louis_cardinals,,,ST Louis CardinalsG2,ST Louis Cardinals,2.0,100.0,100.0,38.0,75.0,100.0,97.0,68.0,,,,,,,25.0,,True,,1,,,,,,,,,,,,
