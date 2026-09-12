@@ -302,6 +302,11 @@ COLUMNS = [
     "total_bets_handle_divergence",
     "sharp_signal_spread",
     "sharp_signal_total",
+    # Which side the handle/bets gap points to. The divergence columns above
+    # are absolute values and therefore say nothing about direction, which
+    # made them unusable for backtesting on their own. These carry the side.
+    "spread_sharp_side",   # "away" | "home" | ""
+    "total_sharp_side",    # "over" | "under" | ""
     # Time-series tracking
     "scrape_num",
     # Deltas from previous scrape (same game_id + source)
@@ -1061,6 +1066,12 @@ def _parse_vsin_sp_table(soup, source_key: str, sport: str) -> list[dict]:
     def _num_from(text):
         if not text:
             return ""
+        # VSiN renders a pickem as "PK" / "PICK" / "EV", not "0". Without this
+        # the spread came back blank, the row was dropped from ATS grading,
+        # and pickems vanished from the sample. Football has meaningfully
+        # more of them than basketball.
+        if re.search(r"\b(PK|PICK|EVEN|EV)\b", text, re.IGNORECASE):
+            return 0.0
         m = re.search(r"[+-]?\d+(?:\.\d+)?", text)
         return float(m.group(0)) if m else ""
 
@@ -1871,19 +1882,75 @@ def parse_splits_page(html: str, source_key: str, sport: str) -> list[dict]:
     return parse_generic(html, source_key, sport)
 
 
-def compute_signals(game: dict):
-    """Compute sharp money signals from bets vs handle divergence."""
+SHARP_THRESHOLD = 15          # kept for the legacy boolean columns
+PAIR_SUM_TOLERANCE = 2.0      # away% + home% must land within this of 100
+
+
+def _pair_is_sane(a, b) -> bool:
+    """True when a complementary percentage pair actually complements.
+
+    VSiN renders away/home (and over/under) as a pair that sums to 100. When
+    only one badge of a pair parses, the other reads 0 and the raw difference
+    becomes a huge fake divergence -- e.g. home_bets=62 with home_handle=0
+    scored as a 62-point signal, which then sorted to the top of the
+    dashboard and polluted the hit-rate sample. Require the pair to sum to
+    ~100 before trusting either half.
+    """
     try:
-        hb = float(game.get("spread_home_bets_pct", 0) or 0)
-        hh = float(game.get("spread_home_handle_pct", 0) or 0)
-        if hb and hh:
-            game["spread_bets_handle_divergence"] = round(abs(hb - hh), 1)
-            game["sharp_signal_spread"] = abs(hb - hh) >= 15
-        ob = float(game.get("total_over_bets_pct", 0) or 0)
-        oh = float(game.get("total_over_handle_pct", 0) or 0)
-        if ob and oh:
-            game["total_bets_handle_divergence"] = round(abs(ob - oh), 1)
-            game["sharp_signal_total"] = abs(ob - oh) >= 15
+        a, b = float(a or 0), float(b or 0)
+    except (ValueError, TypeError):
+        return False
+    if a <= 0 or b <= 0:
+        return False
+    return abs((a + b) - 100.0) <= PAIR_SUM_TOLERANCE
+
+
+def compute_signals(game: dict):
+    """Compute sharp-money signals from the bets-vs-handle gap.
+
+    Stores three things per market:
+      *_bets_handle_divergence : absolute gap, unchanged (dashboard reads it)
+      *_sharp_side             : which side the money leans to
+      sharp_signal_*           : legacy boolean at the hardcoded threshold
+
+    A market is only scored when BOTH of its percentage pairs parsed cleanly
+    (see _pair_is_sane). Anything else is left blank rather than guessed --
+    a blank is recoverable, a fabricated 60-point divergence is not.
+    """
+    try:
+        # ---- Spread / moneyline side ----
+        ab = game.get("spread_away_bets_pct", "")
+        hb = game.get("spread_home_bets_pct", "")
+        ah = game.get("spread_away_handle_pct", "")
+        hh = game.get("spread_home_handle_pct", "")
+
+        if _pair_is_sane(ab, hb) and _pair_is_sane(ah, hh):
+            ab_f, ah_f = float(ab), float(ah)
+            gap = ah_f - ab_f          # + => handle favours the AWAY side
+            game["spread_bets_handle_divergence"] = round(abs(gap), 1)
+            game["spread_sharp_side"] = "away" if gap > 0 else ("home" if gap < 0 else "")
+            game["sharp_signal_spread"] = abs(gap) >= SHARP_THRESHOLD
+        else:
+            game["spread_bets_handle_divergence"] = ""
+            game["spread_sharp_side"] = ""
+            game["sharp_signal_spread"] = ""
+
+        # ---- Total ----
+        ob = game.get("total_over_bets_pct", "")
+        ub = game.get("total_under_bets_pct", "")
+        oh = game.get("total_over_handle_pct", "")
+        uh = game.get("total_under_handle_pct", "")
+
+        if _pair_is_sane(ob, ub) and _pair_is_sane(oh, uh):
+            ob_f, oh_f = float(ob), float(oh)
+            gap = oh_f - ob_f          # + => handle favours the OVER
+            game["total_bets_handle_divergence"] = round(abs(gap), 1)
+            game["total_sharp_side"] = "over" if gap > 0 else ("under" if gap < 0 else "")
+            game["sharp_signal_total"] = abs(gap) >= SHARP_THRESHOLD
+        else:
+            game["total_bets_handle_divergence"] = ""
+            game["total_sharp_side"] = ""
+            game["sharp_signal_total"] = ""
     except (ValueError, TypeError):
         pass
 
@@ -1905,24 +1972,48 @@ def make_game_id(sport: str, game_date: str, away_team: str, home_team: str) -> 
                 name = name[len(prefix.replace(" ", "_")):]
         return name
 
-    # Normalize game_date to YYYYMMDD
+    # Normalize game_date to YYYYMMDD.
+    #
+    # Callers may pass an already-authoritative "YYYYMMDD" (from ESPN) or
+    # VSiN's year-less display string ("Sep 7"). Prefer the former.
+    #
+    # The year-less path previously stamped datetime.now().year onto every
+    # date, so a January playoff game scraped in December resolved to the
+    # year that had just ended and produced a game_id nobody would ever match
+    # again. _vsin_display_to_yyyymmdd already handles that rollover; use it.
     date_str = ""
     today = now_eastern()
-    year = str(today.year)
 
     if game_date:
-        gd = game_date.strip()
-        # Prepend current year to avoid Python 3.15 deprecation warning
-        for fmt in ["%Y %b %d", "%Y %m/%d", "%Y %B %d", "%Y %b. %d"]:
-            try:
-                parsed = datetime.strptime(f"{year} {gd}", fmt)
-                date_str = parsed.strftime("%Y%m%d")
-                break
-            except ValueError:
-                continue
+        gd = str(game_date).strip()
+
+        # Already an authoritative YYYYMMDD?
+        if re.fullmatch(r"\d{8}", gd):
+            date_str = gd
+        else:
+            # Rollover-aware month/day parse (Dec <-> Jan).
+            date_str = _vsin_display_to_yyyymmdd(gd)
+
+            # Fall back to the explicit formats for anything that helper
+            # doesn't recognise (e.g. "9/07", "September 7").
+            if not date_str:
+                for fmt in ["%Y %b %d", "%Y %m/%d", "%Y %B %d", "%Y %b. %d"]:
+                    try:
+                        parsed = datetime.strptime(f"{today.year} {gd}", fmt)
+                        date_str = parsed.strftime("%Y%m%d")
+                        break
+                    except ValueError:
+                        continue
 
     if not date_str:
+        # Last resort. This is the fragmentation risk: the same game scraped
+        # on two different days lands under two different ids. Log it so a
+        # systematic parse failure is visible rather than silent.
         date_str = today.strftime("%Y%m%d")
+        print(f"  [game_id] WARNING: no resolvable date for "
+              f"{away_team} @ {home_team} ({sport}) -- "
+              f"falling back to today ({date_str}). History for this game "
+              f"will not link across days.")
 
     away = norm(away_team) if away_team else "unk"
     home = norm(home_team) if home_team else "unk"
@@ -1930,11 +2021,18 @@ def make_game_id(sport: str, game_date: str, away_team: str, home_team: str) -> 
 
 
 def assign_game_ids(games: list[dict], sport: str):
-    """Assign game_id to each game record."""
+    """Assign game_id to each game record.
+
+    normalize_game_dates_with_espn resolves each game to an authoritative
+    YYYYMMDD but then wrote it back as a year-less display string ("Sep 7"),
+    throwing the year away before it ever reached make_game_id. It now also
+    stashes the raw YYYYMMDD on the record; prefer that.
+    """
     for game in games:
+        authoritative = str(game.get("_espn_date_yyyymmdd", "") or "")
         game["game_id"] = make_game_id(
             sport,
-            str(game.get("game_date", "")),
+            authoritative or str(game.get("game_date", "")),
             str(game.get("away_team", "")),
             str(game.get("home_team", "")),
         )
@@ -1944,6 +2042,56 @@ def assign_game_ids(games: list[dict], sport: str):
 # Used to compute deltas without reading CSV files every scrape.
 _prev_scrape_cache: dict[tuple[str, str], dict] = {}
 _scrape_counter: dict[tuple[str, str], int] = {}
+
+
+# Sports whose delta cache has already been seeded this process.
+_delta_cache_seeded: set[str] = set()
+
+
+def _seed_delta_cache(sport: str):
+    """Load today's timeseries so d_* columns and scrape_num survive restarts.
+
+    _prev_scrape_cache and _scrape_counter are module-level in-memory dicts.
+    GitHub Actions invokes the scraper with --once, so every run started with
+    them empty: scrape_num was always 1 and all twelve d_* columns were always
+    blank -- twelve dead fields in every row ever written. Seeding from the
+    CSV that already holds the day's history fixes both, and is idempotent.
+    """
+    if sport in _delta_cache_seeded:
+        return
+    _delta_cache_seeded.add(sport)
+
+    ts_path = DATA_DIR / "timeseries" / f"{sport}_{today_str()}.csv"
+    if not ts_path.exists():
+        return
+
+    try:
+        prev = pd.read_csv(ts_path)
+    except Exception as e:
+        print(f"  [deltas] Could not seed cache from {ts_path.name}: {e}")
+        return
+
+    if prev.empty or "game_id" not in prev.columns:
+        return
+
+    # Sort by timestamp so the last row per (game_id, source) is the latest.
+    if "timestamp" in prev.columns:
+        prev = prev.sort_values("timestamp")
+
+    seeded = 0
+    for (gid, src), grp in prev.groupby(["game_id", "source"], dropna=False):
+        key = (str(gid), str(src))
+        last = grp.iloc[-1]
+        _prev_scrape_cache[key] = {
+            f: ("" if pd.isna(last.get(f, "")) else last.get(f, ""))
+            for f in DELTA_FIELDS
+        }
+        _scrape_counter[key] = len(grp)
+        seeded += 1
+
+    if seeded:
+        print(f"  [deltas] Seeded {seeded} game/source pair(s) from "
+              f"{ts_path.name} -- deltas and scrape_num continue from there.")
 
 
 def compute_deltas(games: list[dict]):
@@ -1992,7 +2140,10 @@ import json as _json
 # ESPN scoreboard API endpoints (public, no auth needed)
 _ESPN_SCHEDULE_URLS = {
     "nfl":     "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={date}&limit=200",
-    "cfb":     "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates={date}&groups=80&limit=200",
+    # groups=80 restricts to FBS. VSiN posts FCS and FBS-vs-FCS games, which
+    # then failed date normalization and contamination checks because ESPN
+    # never returned them. Unfiltered + a higher limit covers the full slate.
+    "cfb":     "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates={date}&limit=400",
     "nba":     "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates={date}&limit=200",
     "wnba":    "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates={date}&limit=200",
     "cbb":     "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates={date}&groups=50&limit=200",
@@ -2317,10 +2468,21 @@ def normalize_game_dates_with_espn(games: list[dict], sport: str) -> tuple[list[
         # multi-game series resolve to the correct day rather than the first
         # day of the series.
         anchor = _vsin_display_to_yyyymmdd(g.get("game_date", ""))
+
+        # Football books post the full week's card days ahead of kickoff. A
+        # 2-day window never reached a Sunday game scraped on Tuesday, so the
+        # date was left unnormalized and the id could drift. Basketball and
+        # baseball keep the tight window -- they play near-daily, and a wide
+        # window there risks matching the wrong leg of a series.
+        window = 8 if sport in ("nfl", "cfb") else 2
         espn_date = _find_espn_et_date(sport, away, home,
-                                       window_days=2, anchor_yyyymmdd=anchor)
+                                       window_days=window, anchor_yyyymmdd=anchor)
 
         if espn_date:
+            # Keep the authoritative YYYYMMDD for make_game_id. The display
+            # string below loses the year, which is what made January games
+            # scraped in December unmatchable.
+            g["_espn_date_yyyymmdd"] = espn_date
             # Update game_date to ESPN's authoritative ET date
             new_display = _yyyymmdd_to_display_date(espn_date)
             if new_display and new_display != g.get("game_date", ""):
@@ -2737,8 +2899,10 @@ def save_data(games: list[dict], sport: str, is_closing: bool = False):
         print("  No data to save.")
         return
 
-    # Assign game_ids and compute deltas from previous scrape
+    # Assign game_ids and compute deltas from previous scrape.
+    # Seeding first is what makes deltas meaningful under --once.
     assign_game_ids(games, sport)
+    _seed_delta_cache(sport)
     compute_deltas(games)
 
     df = pd.DataFrame(games)
@@ -2750,10 +2914,20 @@ def save_data(games: list[dict], sport: str, is_closing: bool = False):
     today = today_str()
 
     # Closing
+    #
+    # APPEND, never truncate. auto_close_check dedupes against the rows
+    # already in this file and then hands us only the NEW closing games; the
+    # previous mode="w" wrote those over the top, destroying every closing
+    # line captured earlier the same day. On a Sunday with 1pm / 4pm / 8pm
+    # capture windows only the 8pm rows survived.
     if is_closing:
         close_path = DATA_DIR / "closing" / f"{sport}_{today}.csv"
-        _safe_csv_write(df, close_path, mode="w", header=True)
-        print(f"  Closing: {close_path}")
+        if close_path.exists():
+            _safe_csv_write(df, close_path, mode="a", header=False)
+            print(f"  Closing: {close_path} (+{len(df)} rows)")
+        else:
+            _safe_csv_write(df, close_path, mode="w", header=True)
+            print(f"  Closing: {close_path} ({len(df)} rows)")
 
     # Time series (one file per sport per day, append every scrape)
     ts_path = DATA_DIR / "timeseries" / f"{sport}_{today}.csv"
