@@ -1193,6 +1193,18 @@ def _parse_vsin_sp_table(soup, source_key: str, sport: str) -> list[dict]:
               f"{rejected_other_league} row(s) whose data-gamecode "
               f"belonged to a different league than {sport.upper()}.")
 
+    # Rejecting EVERY row is never real contamination -- a page genuinely
+    # serving another league would be rare and partial. 100% rejection means
+    # our own marker is wrong. Say so unmistakably; this exact condition was
+    # logged as a routine warning on 2026-09-12 and scrolled past.
+    if rejected_other_league and not games:
+        print(f"  [{source_key}] *** CONFIG ERROR: rejected EVERY row "
+              f"({rejected_other_league}) for {sport.upper()}. ***")
+        print(f"  [{source_key}] *** SPORT_INFO['{sport}']['gamecode_league'] "
+              f"= {_own_marker!r} does not match what VSiN emits. ***")
+        print(f"  [{source_key}] *** Run: python verify_gamecode_markers.py "
+              f"{sport} ***")
+
     return games
 
 
@@ -1864,8 +1876,25 @@ def parse_splits_page(html: str, source_key: str, sport: str) -> list[dict]:
         games = parse_vsin(html, source_key, sport)
         if games:
             return games
-        # If VSiN parser found nothing, fall through to generic
-        print(f"  [{source_key}] VSiN parser found 0 games, trying generic...")
+        # DO NOT fall through to parse_generic here.
+        #
+        # 2026-09-12: a wrong gamecode_league marker made parse_vsin return
+        # [] for a perfectly healthy page. The generic fallback then invented
+        # 121 games -- duplicated team names, bets percentages stored as
+        # totals, a 90% divergence that did not exist -- and they sorted to
+        # the top of the dashboard because nothing downstream could tell them
+        # from real rows. Returning [] is strictly better: the caller saves
+        # the raw HTML, the dashboard shows an honest gap, and the failure is
+        # visible in minutes instead of hours.
+        print(f"  [{source_key}] ERROR: VSiN parser returned 0 games for "
+              f"{sport.upper()}. REFUSING to fall through to parse_generic "
+              f"(it fabricates plausible-looking rows). Raw HTML will be "
+              f"saved for diagnosis.")
+        print(f"  [{source_key}] First thing to check: does "
+              f"SPORT_INFO['{sport}']['gamecode_league'] match the alpha "
+              f"prefix in VSiN's data-gamecode? Run: "
+              f"python verify_gamecode_markers.py {sport}")
+        return []
 
     if source_key == "dk_network":
         games = parse_dk_network(html, source_key, sport)
