@@ -2519,7 +2519,7 @@ def scrape_source(source_key: str, sport: str, driver) -> list[dict]:
                 print(f"  [{source_key}] Warning: date normalization failed: {e}")
 
         # Save raw HTML ONLY on parse failure (0 games) for debugging
-        if not games:
+        if True:  # TEMP 2026-09-12: always save raw HTML, parser is misreading columns
             ts = now_eastern().strftime("%Y%m%d_%H%M%S")
             raw_path = DATA_DIR / "raw_html" / f"{source_key}_{sport}_{ts}.html"
             with open(raw_path, "w", encoding="utf-8") as f:
