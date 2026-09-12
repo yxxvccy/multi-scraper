@@ -171,6 +171,47 @@
       return { sprSide, sprLabel, totSide, totLabel };
     }
 
+    /* -- Cross-book agreement (DK vs Circa) --
+       Circa is a sharp, low-limit book; DK is square-heavy and high-limit.
+       A handle/bets gap that appears in BOTH is far harder to explain as
+       noise than one that appears in either alone. Returns null when the
+       game has no Circa row (about 60% of the CFB card).            */
+    function bookAgreement(gameId, allData) {
+      const rows = allData.filter(r => r.game_id === gameId);
+      const latest = src => {
+        const rs = rows.filter(r => r.source === src)
+                       .sort((a, b) => (a.timestamp || "").localeCompare(b.timestamp || ""));
+        return rs.length ? rs[rs.length - 1] : null;
+      };
+      const dk = latest("vsin_dk"), ci = latest("vsin_circa");
+      if (!dk || !ci) return null;
+
+      const lD = sharpLean(dk), lC = sharpLean(ci);
+
+      // min(), not average: both books must clear the bar independently.
+      const mk = (sideD, sideC, divD, divC, labelD) => {
+        if (!sideD || !sideC) return null;
+        const agree = sideD === sideC;
+        return {
+          agree, side: sideD, otherSide: sideC, label: labelD,
+          strength: agree ? Math.min(divD, divC) : 0,
+          dkDiv: divD, ciDiv: divC,
+        };
+      };
+
+      const spread = mk(lD.sprSide, lC.sprSide,
+                        NUM(dk.spread_bets_handle_divergence),
+                        NUM(ci.spread_bets_handle_divergence), lD.sprLabel);
+      const total  = mk(lD.totSide, lC.totSide,
+                        NUM(dk.total_bets_handle_divergence),
+                        NUM(ci.total_bets_handle_divergence), lD.totLabel);
+
+      const best = Math.max(spread && spread.agree ? spread.strength : 0,
+                            total  && total.agree  ? total.strength  : 0);
+      const split = !!((spread && !spread.agree) || (total && !total.agree));
+      return { dk, ci, spread, total, best, split };
+    }
+
     const C = {
       bg:"#0A0E1A", card:"#12162B", panel:"#0E1220", bdr:"#1E2438",
       tx:"#E8EAF0", txM:"#8B92B0", txD:"#5D6481",
@@ -313,7 +354,7 @@
     }
 
     /* ========== UPDATED GameRow with lean indicators ========== */
-    function GameRow({game,espn,sel,onClick,maxDiv,first}){
+    function GameRow({game,espn,sel,onClick,maxDiv,first,agree}){
       const sd=NUM(game.spread_bets_handle_divergence),td=NUM(game.total_bets_handle_divergence),div=Math.max(sd,td);
       const sm=first&&NUM(game.spread_line)!==NUM(first.spread_line),tm=first&&NUM(game.total_line)!==NUM(first.total_line),moved=sm||tm;
       const pct=maxDiv>0?(div/maxDiv)*100:0;
@@ -345,6 +386,32 @@
               </div>
             </div>
           </div>
+          {/* Cross-book agreement */}
+          {agree&&(agree.best>0||agree.split)&&<div style={{display:"flex",gap:5,marginBottom:6,flexWrap:"wrap"}}>
+            {["spread","total"].map(mk=>{
+              const a=agree[mk];if(!a)return null;
+              const isSpr=mk==="spread";
+              // Agreement at ~0 divergence is both books saying "nothing here".
+              // That is not a signal, and it is emphatically not a SPLIT.
+              if(a.agree&&a.strength<=0)return null;
+              if(a.agree)return(
+                <div key={mk} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",
+                     background:C.grnB,border:`1px solid ${C.grn}66`,borderRadius:4}}>
+                  <span style={{fontSize:8,fontWeight:800,color:C.grn,letterSpacing:1}}>BOTH BOOKS</span>
+                  <span style={{fontSize:8,fontWeight:700,color:isSpr?C.cyn:C.pur,letterSpacing:1}}>{isSpr?sprLabel(game.sport):"O/U"}</span>
+                  <span style={{fontSize:10,fontWeight:700,fontFamily:MN,color:C.tx}}>{a.label}</span>
+                  <span style={{fontSize:9,fontWeight:700,fontFamily:MN,color:C.grn}}>{a.strength.toFixed(0)}%</span>
+                  <span style={{fontSize:8,color:C.txD,fontFamily:MN}}>DK {a.dkDiv.toFixed(0)} / CIRCA {a.ciDiv.toFixed(0)}</span>
+                </div>);
+              return(
+                <div key={mk} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"2px 8px",
+                     background:C.redB,border:`1px solid ${C.red}55`,borderRadius:4}}>
+                  <span style={{fontSize:8,fontWeight:800,color:C.red,letterSpacing:1}}>SPLIT</span>
+                  <span style={{fontSize:8,fontWeight:700,color:isSpr?C.cyn:C.pur,letterSpacing:1}}>{isSpr?sprLabel(game.sport):"O/U"}</span>
+                  <span style={{fontSize:9,color:C.txM,fontFamily:MN}}>DK {a.side} vs Circa {a.otherSide}</span>
+                </div>);
+            })}
+          </div>}
           {/* Sharp lean pills */}
           <div style={{display:"flex",gap:5,marginBottom:6,flexWrap:"wrap"}}>
             {sd>=5&&lean.sprLabel&&<div style={{display:"inline-flex",alignItems:"center",gap:4,padding:"2px 8px",background:sd>=15?C.ambB:C.card,border:`1px solid ${sd>=15?C.ambD:C.bdr}`,borderRadius:4}}>
@@ -506,6 +573,7 @@
       const [metric,setMetric]=useState("spread");
       const [espnCache,setEspnCache]=useState({});
       const [tab,setTab]=useState("games");
+      const [bothOnly,setBothOnly]=useState(false);
 
       // Live data fetch on mount + auto-refresh
       const firstLoad = useRef(true);
@@ -553,6 +621,18 @@
       const latestByGameSrc=useMemo(()=>{const m={};filteredData.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||(r.timestamp||"")>(m[k].timestamp||""))m[k]=r;});return m;},[filteredData]);
       const firstByGame=useMemo(()=>{const m={};filteredData.forEach(r=>{const k=`${r.game_id}__${r.source}`;if(!m[k]||(r.timestamp||"")<(m[k].timestamp||""))m[k]=r;});return m;},[filteredData]);
       const games=useMemo(()=>Object.values(latestByGameSrc),[latestByGameSrc]);
+      // Keyed by game_id (not game_id__source) — agreement is a property of
+      // the GAME, shared by both books' rows.
+      const agreeMap=useMemo(()=>{
+        const m={},seen=new Set();
+        filteredData.forEach(r=>{
+          if(!r.game_id||seen.has(r.game_id))return;
+          seen.add(r.game_id);
+          const a=bookAgreement(r.game_id,filteredData);
+          if(a)m[r.game_id]=a;
+        });
+        return m;
+      },[filteredData]);
       const todayStr=useMemo(()=>fmtDate(new Date()),[]);
       const tmrwStr=useMemo(()=>{const t=new Date();t.setDate(t.getDate()+1);return fmtDate(t);},[]);
       const availDates=useMemo(()=>[...new Set(games.map(g=>getGameDate(g)))].sort(),[games]);
@@ -623,9 +703,10 @@
         else if(dateFilter==="tomorrow")f=f.filter(g=>getGameDate(g)===tmrwStr);
         if(sportFilter!=="all")f=f.filter(g=>g.sport===sportFilter);
         if(sourceFilter!=="all")f=f.filter(g=>g.source===sourceFilter);
+        if(bothOnly)f=f.filter(g=>!!agreeMap[g.game_id]);
         if(minSpreadDiv>0||minTotalDiv>0){f=f.filter(g=>{const sd=NUM(g.spread_bets_handle_divergence),td=NUM(g.total_bets_handle_divergence);if(minSpreadDiv>0&&minTotalDiv>0)return sd>=minSpreadDiv||td>=minTotalDiv;if(minSpreadDiv>0)return sd>=minSpreadDiv;if(minTotalDiv>0)return td>=minTotalDiv;return true;});}
         return f;
-      },[cleaned,dateFilter,todayStr,tmrwStr,sportFilter,sourceFilter,minSpreadDiv,minTotalDiv]);
+      },[cleaned,dateFilter,todayStr,tmrwStr,sportFilter,sourceFilter,minSpreadDiv,minTotalDiv,bothOnly,agreeMap]);
 
       const maxDiv=useMemo(()=>{let m=0;filtered.forEach(g=>m=Math.max(m,NUM(g.spread_bets_handle_divergence),NUM(g.total_bets_handle_divergence)));return m;},[filtered]);
       const ranked=useMemo(()=>{
@@ -635,6 +716,13 @@
         else if(sortBy==="total_div")arr.sort((a,b)=>NUM(b.total_bets_handle_divergence)-NUM(a.total_bets_handle_divergence));
         else if(sortBy==="time")arr.sort((a,b)=>{const ea=getESPN(a),eb=getESPN(b);return(ea?.startEpoch||0)-(eb?.startEpoch||0);});
         else if(sortBy==="time_desc")arr.sort((a,b)=>{const ea=getESPN(a),eb=getESPN(b);return(eb?.startEpoch||0)-(ea?.startEpoch||0);});
+        // Agreement strength desc. Games with no Circa row score 0 and fall
+        // to the bottom rather than being hidden -- absence of a second book
+        // is not evidence against the signal.
+        else if(sortBy==="agree")arr.sort((a,b)=>{
+          const aa=agreeMap[a.game_id],ab=agreeMap[b.game_id];
+          return((ab?ab.best:0)-(aa?aa.best:0));
+        });
         return arr;
       },[filtered,sortBy,getESPN]);
 
@@ -706,8 +794,10 @@
             <button style={btn(sourceFilter==="all")} onClick={()=>setSourceFilter("all")}>All</button>
             {sources.map(s=><button key={s} style={btn(sourceFilter===s)} onClick={()=>setSourceFilter(s)}>{displaySource(s)}</button>)}
             <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
+            <button style={btn(bothOnly)} onClick={()=>setBothOnly(!bothOnly)} title="Only games Circa also posts">Both Books Only</button>
+            <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
             <span style={{fontSize:9,color:C.txM,textTransform:"uppercase",letterSpacing:1.5}}>Sort</span>
-            {[["max_div","Max Div"],["spread_div","Spread"],["total_div","Total"],["time","Time \u2191"],["time_desc","Time \u2193"]].map(([k,l])=><button key={k} style={btn(sortBy===k)} onClick={()=>setSortBy(k)}>{l}</button>)}
+            {[["max_div","Max Div"],["spread_div","Spread"],["total_div","Total"],["agree","Both Books"],["time","Time \u2191"],["time_desc","Time \u2193"]].map(([k,l])=><button key={k} style={btn(sortBy===k)} onClick={()=>setSortBy(k)}>{l}</button>)}
             <div style={{width:1,height:16,background:C.bdr,margin:"0 3px"}}/>
             <span style={{fontSize:9,color:C.cyn,textTransform:"uppercase",letterSpacing:1.5}}>Spr Min</span>
             {[0,10,15,20,30].map(v=><button key={v} style={btn(minSpreadDiv===v)} onClick={()=>setMinSpreadDiv(v)}>{v}%</button>)}
@@ -717,7 +807,7 @@
           </div>
           <div style={{display:"flex",flex:1,overflow:"hidden"}}>
             <div style={{width:520,flexShrink:0,overflowY:"auto",borderRight:`1px solid ${C.bdr}`}}>
-              {loading?<div style={{padding:40,textAlign:"center",color:C.txM,fontSize:12}}><div style={{marginBottom:8,fontSize:14}}>Loading live data...</div><div style={{fontSize:10,color:C.txD}}>Fetching from GitHub repository</div></div>:fetchError&&data.length===0?<div style={{padding:40,textAlign:"center",color:C.amb,fontSize:12}}><div style={{marginBottom:8,fontSize:14}}>{fetchError}</div><div style={{fontSize:10,color:C.txD}}>You can upload a CSV manually using the button above</div></div>:ranked.length===0?<div style={{padding:40,textAlign:"center",color:C.txM,fontSize:12}}>No games match filters</div>:ranked.map((g,i)=><GameRow key={`${g.game_id}__${g.source}__${i}`} game={g} espn={getESPN(g)} sel={`${g.game_id}__${g.source}`===selectedId} onClick={()=>selectGame(`${g.game_id}__${g.source}`)} maxDiv={maxDiv} first={firstByGame[`${g.game_id}__${g.source}`]}/>)}
+              {loading?<div style={{padding:40,textAlign:"center",color:C.txM,fontSize:12}}><div style={{marginBottom:8,fontSize:14}}>Loading live data...</div><div style={{fontSize:10,color:C.txD}}>Fetching from GitHub repository</div></div>:fetchError&&data.length===0?<div style={{padding:40,textAlign:"center",color:C.amb,fontSize:12}}><div style={{marginBottom:8,fontSize:14}}>{fetchError}</div><div style={{fontSize:10,color:C.txD}}>You can upload a CSV manually using the button above</div></div>:ranked.length===0?<div style={{padding:40,textAlign:"center",color:C.txM,fontSize:12}}>No games match filters</div>:ranked.map((g,i)=><GameRow key={`${g.game_id}__${g.source}__${i}`} game={g} espn={getESPN(g)} sel={`${g.game_id}__${g.source}`===selectedId} onClick={()=>selectGame(`${g.game_id}__${g.source}`)} maxDiv={maxDiv} first={firstByGame[`${g.game_id}__${g.source}`]} agree={agreeMap[g.game_id]}/>)}
             </div>
             <div ref={detailRef} style={{flex:1,overflowY:"auto",padding:24,background:C.panel}}>
               {!selectedGame?<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:C.txM,fontSize:13}}>{"\u2190"} Select a game</div>:(()=>{
