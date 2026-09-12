@@ -144,7 +144,7 @@ SPORT_INFO = {
         "dk_network": True,
         "dk_dropdown_label": "NCAA Football",
         "season": "Aug-Jan",
-        "gamecode_league": "NCAAF",
+        "gamecode_league": "CFB",
     },
     "cbb": {
         "display": "College Basketball (Men's)",
