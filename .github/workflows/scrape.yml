@@ -1,44 +1,71 @@
 name: Scheduled Scrape
 
 # ---------------------------------------------------------------------------
-# Schedule strategy
+# FOOTBALL SEASON SCHEDULE  (rewritten 2026-09-02)
 # ---------------------------------------------------------------------------
-# GitHub throttles scheduled workflows hardest at popular cron times (top of
-# the hour, :30). To maximize the chance each run actually fires, we:
-#   1. Schedule only a few targeted windows per day (not every 30 min).
-#   2. Use OFF-PEAK minutes (:07, :21, :53) to dodge congestion.
-#   3. Fire TWICE per window (~14 min apart) for redundancy - if GitHub
-#      skips one, the other usually lands. Duplicate successes are harmless;
-#      the timeseries just records an extra snapshot a few minutes apart.
+# The previous schedule was built around a nightly CBB/MLB slate: four fixed
+# windows a day (noon / 4pm / 6:15pm / 9:15pm ET). Against a football calendar
+# that missed every primetime kickoff and the entire Sunday 1pm block, because
+# --auto-close only fires when a game starts within N minutes of a run.
 #
-# Target windows (Eastern Time) and their purpose:
-#   ~12:00 PM ET  midday snapshot (lines posted, nothing started)
-#   ~4:00  PM ET  afternoon snapshot
-#   ~6:15  PM ET  closing capture for primetime games (6:35/6:40 starts)
-#   ~9:15  PM ET  closing capture for West-Coast games (9:40 starts)
+# Two changes fix that:
+#   1. Windows are now day-of-week aware and anchored to actual kickoff times.
+#   2. --auto-close widened 45 -> 75 min, so a single skipped run no longer
+#      loses the closing snapshot (consecutive runs overlap the window).
+#
+# Coverage map (ET):
+#   Tue-Fri  11:07a, 5:07p   week-long line movement for the upcoming slate
+#   Thu       7:35p          TNF 8:15 kick
+#   Sat      11:21a, 2:53p, 6:21p, 9:53p   CFB noon / 3:30 / 7:00 / 10:30
+#   Sun      12:21p, 12:35p  1:00 kicks (paired for redundancy)
+#   Sun       3:35p, 3:49p   4:05 / 4:25 kicks (paired)
+#   Sun       7:35p, 7:49p   SNF 8:20 (paired)
+#   Mon       7:35p          MNF 8:15
+#
+# Off-peak minutes (:07 :21 :35 :49 :53) are used throughout — GitHub throttles
+# scheduled workflows hardest at :00 and :30.
 #
 # IMPORTANT - DAYLIGHT SAVING: GitHub cron is always UTC and does NOT observe
-# US daylight saving. The UTC times below are correct for EDT (mid-Mar to
-# early-Nov). When the US switches to EST in November, ET will be UTC-5 and
-# every window will land one hour EARLIER in ET. To keep these windows at the
-# same ET clock times in winter, ADD 1 hour to each UTC cron below (e.g.
-# 15:53 -> 16:53). Revisit at the next DST change.
+# US daylight saving. Every UTC time below is correct for EDT (through Sat
+# Nov 1 2026). When the US falls back to EST on Sun Nov 1, ET becomes UTC-5 and
+# every window lands one hour EARLIER in ET. ADD 1 HOUR to each UTC cron at
+# that point. This matters more now than it did in the old schedule, because
+# these windows are pinned to kickoff times rather than loose afternoon blocks.
+#
+# NOTE ON cron DOW: 0=Sun, 1=Mon, 4=Thu, 6=Sat. Where a window crosses midnight
+# UTC the DOW is shifted accordingly (Sat 9:53p ET = Sun 01:53 UTC).
 # ---------------------------------------------------------------------------
 
 on:
   schedule:
-    # Noon ET window (16:00 UTC during EDT)
-    - cron: '53 15 * * *'   # 11:53 AM ET
-    - cron: '7 16 * * *'    # 12:07 PM ET
-    # 4 PM ET window (20:00 UTC during EDT)
-    - cron: '53 19 * * *'   #  3:53 PM ET
-    - cron: '7 20 * * *'    #  4:07 PM ET
-    # 6:15 PM ET window - primetime closing capture (22:15 UTC during EDT)
-    - cron: '7 22 * * *'    #  6:07 PM ET
-    - cron: '21 22 * * *'   #  6:21 PM ET
-    # 9:15 PM ET window - West-Coast closing capture (01:15 UTC next day during EDT)
-    - cron: '7 1 * * *'     #  9:07 PM ET (previous day)
-    - cron: '21 1 * * *'    #  9:21 PM ET (previous day)
+    # --- Midweek line tracking (Tue-Fri) ---
+    - cron: '7 15 * * 2-5'    # 11:07 AM ET
+    - cron: '7 21 * * 2-5'    #  5:07 PM ET
+
+    # --- Thursday Night Football (8:15 PM ET kick) ---
+    - cron: '35 23 * * 4'     #  7:35 PM ET
+
+    # --- Saturday college football ---
+    - cron: '21 15 * * 6'     # 11:21 AM ET  -> noon kicks
+    - cron: '53 18 * * 6'     #  2:53 PM ET  -> 3:30 kicks
+    - cron: '21 22 * * 6'     #  6:21 PM ET  -> 7:00 kicks
+    - cron: '53 1 * * 0'      #  9:53 PM ET Sat -> 10:30 kicks
+    # Saturday daytime line movement
+    - cron: '7 13 * * 6'      #  9:07 AM ET
+
+    # --- Sunday NFL (paired runs for redundancy) ---
+    - cron: '21 16 * * 0'     # 12:21 PM ET -> 1:00 kicks
+    - cron: '35 16 * * 0'     # 12:35 PM ET -> 1:00 kicks
+    - cron: '35 19 * * 0'     #  3:35 PM ET -> 4:05 / 4:25 kicks
+    - cron: '49 19 * * 0'     #  3:49 PM ET -> 4:05 / 4:25 kicks
+    - cron: '35 23 * * 0'     #  7:35 PM ET -> 8:20 SNF
+    - cron: '49 23 * * 0'     #  7:49 PM ET -> 8:20 SNF
+    # Sunday morning — final pre-slate line snapshot
+    - cron: '7 14 * * 0'      # 10:07 AM ET
+
+    # --- Monday Night Football (8:15 PM ET kick) ---
+    - cron: '35 23 * * 1'     #  7:35 PM ET
+
   workflow_dispatch:
 
 jobs:
@@ -53,12 +80,11 @@ jobs:
           python-version: '3.11'
 
       # Install Google Chrome from a real .deb (NOT the chromium snap).
-      # The previous `apt-get install chromium-browser` routed through the
-      # Chromium *snap* on Ubuntu 24, which (a) downloads hundreds of MB of
-      # snap dependencies every run and (b) intermittently fails when the
-      # snap store returns HTTP 408 (this caused the 2026-06-03 exit-100
-      # failure). setup-chrome installs a cached .deb in seconds and never
-      # touches the snap store.
+      # `apt-get install chromium-browser` routes through the Chromium *snap*
+      # on Ubuntu 24, which (a) downloads hundreds of MB every run and (b)
+      # intermittently fails when the snap store returns HTTP 408 (this caused
+      # the 2026-06-03 exit-100 failure). setup-chrome installs a cached .deb
+      # in seconds and never touches the snap store.
       - name: Install Chrome
         uses: browser-actions/setup-chrome@v1
         with:
@@ -67,10 +93,14 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      # Football only. The old batch (cbb wcbb cbase chockey mlb epl ucl nba
+      # wnba) carried four out-of-season sports that produced nothing but
+      # empty-parse raw_html artifacts on every run. Add basketball back in
+      # November by appending: cbb wcbb nba
       - name: Run scraper
         env:
           TZ: America/New_York
-        run: python multi_scraper.py --batch cbb wcbb cbase chockey mlb epl ucl nba wnba --once --auto-close 45
+        run: python multi_scraper.py --batch nfl cfb --once --auto-close 75
 
       - name: Upload raw HTML for debugging
         if: always()
