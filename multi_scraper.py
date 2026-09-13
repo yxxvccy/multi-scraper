@@ -2189,6 +2189,83 @@ _ESPN_SCHEDULE_URLS = {
 # Cache: { ("wcbb", "20260213"): {"manhattan", "niagara", "duke", ...} }
 _espn_team_cache: dict[tuple[str, str], set[str]] = {}
 
+# ------------------------------------------------------------------
+# ESPN request helper
+# ------------------------------------------------------------------
+# ESPN began returning 403 to requests carrying only a truncated
+# User-Agent (observed 2026-09-13). Browser-side fetches still work, so
+# the block is header-based, not IP-based. Walk a ladder of profiles and
+# remember the first that works -- a scrape makes ~250 ESPN calls and we
+# do not want to re-probe on each one.
+
+_ESPN_HEADER_PROFILES = [
+    {   # full browser-like set; this is normally the one that works
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.espn.com/",
+        "Origin": "https://www.espn.com",
+        "Connection": "keep-alive",
+    },
+    {   # same without Origin -- some edges reject cross-origin hints
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.espn.com/",
+    },
+    {   # the original minimal header, kept last so behaviour can't regress
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    },
+]
+
+_espn_profile_idx = None          # index of the profile known to work
+_espn_warned = False
+
+
+def _espn_get(url: str, timeout: int = 15):
+    """GET an ESPN URL as parsed JSON, or None.
+
+    Returns None rather than raising: callers already treat an empty result
+    as "no schedule data", and a hard raise here would abort a whole scrape
+    over a transient upstream problem.
+    """
+    global _espn_profile_idx, _espn_warned
+
+    order = list(range(len(_ESPN_HEADER_PROFILES)))
+    if _espn_profile_idx is not None:
+        order.remove(_espn_profile_idx)
+        order.insert(0, _espn_profile_idx)
+
+    last = None
+    for i in order:
+        try:
+            req = urllib.request.Request(url, headers=_ESPN_HEADER_PROFILES[i])
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = _json.loads(resp.read().decode("utf-8"))
+            if _espn_profile_idx != i:
+                print(f"  [espn] using header profile {i}")
+                _espn_profile_idx = i
+            return data
+        except Exception as e:
+            last = e
+            code = getattr(e, "code", None)
+            if code not in (403, 429):
+                break        # not a blocking problem; another profile won't help
+            continue
+
+    if not _espn_warned:
+        print(f"  [espn] *** ALL header profiles rejected: {last} ***")
+        print("  [espn] *** Game dates CANNOT be normalized. VSiN serves this")
+        print("  [espn] *** week AND next week on one page, so next week's games")
+        print("  [espn] *** will be mis-dated to today. Treat dates as suspect. ***")
+        _espn_warned = True
+    return None
+
+
+
+
 
 def _normalize_team(name: str) -> str:
     """Normalize team name for fuzzy matching across sources."""
@@ -2216,11 +2293,10 @@ def _fetch_espn_teams(sport: str, date_str: str) -> set[str]:
     teams = set()
 
     try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        })
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = _json.loads(resp.read().decode("utf-8"))
+        data = _espn_get(url)
+        if data is None:
+            _espn_team_cache[cache_key] = set()
+            return _espn_team_cache[cache_key]
 
         for event in data.get("events", []):
             for comp in event.get("competitions", []):
@@ -2272,11 +2348,10 @@ def _fetch_espn_schedule(sport: str, date_str: str) -> list[dict]:
     schedule = []
 
     try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        })
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = _json.loads(resp.read().decode("utf-8"))
+        data = _espn_get(url)
+        if data is None:
+            _espn_schedule_cache.setdefault(cache_key, [])
+            return _espn_schedule_cache[cache_key]
 
         for event in data.get("events", []):
             for comp in event.get("competitions", []):
