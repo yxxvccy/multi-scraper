@@ -1,0 +1,99 @@
+name: Collect Split History
+
+# Nightly harvest of VSiN's splits_history.php.
+#
+# WHY A SEPARATE WORKFLOW: GitHub delays and drops this repo's scheduled runs.
+# Observed 2026-09-12: an 11:21 AM cron fired at 1:45 PM (2h24m late) and the
+# 2:53 PM cron never fired. A closing-line capture that needs a cron to land
+# inside a 75-minute pre-kick window is unreliable by construction.
+#
+# VSiN stops recording line changes at kickoff, so one call per game AFTER the
+# slate returns the whole pre-kick run-up at ~5-min resolution plus the true
+# opener. This job must run EVENTUALLY, not PRECISELY.
+#
+# TIMING: the harvester reads gamecodes from the live splits page, which lists
+# upcoming games. VSiN keeps serving completed games until ~9am ET next day, so
+# an overnight run still sees the slate. Safe window is late the same evening,
+# once everything has kicked.
+#
+# --skip-if-exists makes repeats free: whichever attempt lands first does the
+# work. NOTE: the 12:53 AM run falls on the NEXT calendar day, so it writes a
+# file named for that day -- it's a fallback for a missed evening, not a top-up.
+#
+# DST: UTC times are correct for EDT (through Sat Nov 1 2026). Add one hour
+# to each when the US falls back to EST.
+
+on:
+  schedule:
+    - cron: '7 2 * * *'     # 10:07 PM ET (previous day)
+    - cron: '21 3 * * *'    # 11:21 PM ET (previous day)
+    - cron: '53 4 * * *'    # 12:53 AM ET
+  workflow_dispatch:
+    inputs:
+      sports:
+        description: 'Space-separated sports to harvest'
+        required: false
+        default: 'cfb nfl'
+      force:
+        description: 'Ignore --skip-if-exists and re-harvest'
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  # Never let two attempts harvest at once -- they would double-append.
+  group: collect-history
+  cancel-in-progress: false
+
+jobs:
+  history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Harvest split history
+        env:
+          TZ: America/New_York
+        run: |
+          SPORTS="${{ github.event.inputs.sports || 'cfb nfl' }}"
+          SKIP="--skip-if-exists"
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then SKIP=""; fi
+          for s in $SPORTS; do
+            echo "::group::$s"
+            python collect_history.py --sport "$s" $SKIP || \
+              echo "harvest failed for $s (continuing)"
+            echo "::endgroup::"
+          done
+
+      - name: Upload failed fragments
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: history-failures-${{ github.run_id }}
+          path: data/raw_html/history_fail_*.html
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Commit history
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A data/history/
+          git diff --cached --quiet || \
+            git commit -m "Split history $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git fetch origin main
+          git rebase origin/main
+          git push
