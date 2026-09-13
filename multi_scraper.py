@@ -2343,7 +2343,7 @@ def _fetch_espn_schedule(sport: str, date_str: str) -> list[dict]:
         cached = _espn_schedule_cache[cache_key]
         # Check staleness: re-fetch if cache is older than 10 minutes
         if cached and cached[0].get("_fetched_at"):
-            age = (datetime.utcnow() - cached[0]["_fetched_at"]).total_seconds()
+            age = (datetime.now(ZoneInfo("UTC")) - cached[0]["_fetched_at"]).total_seconds()
             if age < 600:
                 return cached
 
@@ -2395,7 +2395,7 @@ def _fetch_espn_schedule(sport: str, date_str: str) -> list[dict]:
                     "home_names": _team_names(home_entry),
                     "start_utc": start_utc,
                     "status_id": str(comp.get("status", {}).get("type", {}).get("id", "")),
-                    "_fetched_at": datetime.utcnow(),
+                    "_fetched_at": datetime.now(ZoneInfo("UTC")),
                 }
                 schedule.append(game_info)
 
@@ -2792,7 +2792,7 @@ def scrape_source(source_key: str, sport: str, driver) -> list[dict]:
                 print(f"  [{source_key}] Warning: date normalization failed: {e}")
 
         # Save raw HTML ONLY on parse failure (0 games) for debugging
-        if True:  # TEMP 2026-09-12: always save raw HTML, parser is misreading columns
+        if not games:
             ts = now_eastern().strftime("%Y%m%d_%H%M%S")
             raw_path = DATA_DIR / "raw_html" / f"{source_key}_{sport}_{ts}.html"
             with open(raw_path, "w", encoding="utf-8") as f:
@@ -2824,6 +2824,85 @@ def scrape_source(source_key: str, sport: str, driver) -> list[dict]:
             import traceback
             traceback.print_exc()
         return []
+
+
+
+
+# ============================================================
+# BOOK-DIVERGENCE GUARD
+# ============================================================
+
+BOOK_IDENTICAL_THRESHOLD = 0.50   # fraction of shared games allowed identical
+
+
+def _verify_books_differ(games: list[dict], sport: str) -> list[dict]:
+    """Reject Circa rows that are actually DraftKings data.
+
+    _vsin_ensure_book can fail to switch books -- the page redirects, or the
+    toggle click lands on nothing -- and the scraper then writes DK numbers
+    under source="vsin_circa" after printing a warning nobody reads. That
+    corrupts the cross-book agreement signal at its root, because two books
+    agreeing perfectly is indistinguishable from one book counted twice.
+
+    Real books disagree on HANDLE constantly, even when their lines match.
+    Measured on data/history/cfb_20260912.csv (92 shared game/sides):
+
+        spread              47.8% identical    <- lines converge, poor signal
+        total               39.1% identical
+        spread_handle_pct    0.0% identical    <- mean 24.8 apart, max 75
+        spread_bets_pct      0.0% identical    <- mean 13.8 apart, max 56
+
+    So the test is on handle alone. Anything above 20% identical means the
+    two "sources" are the same data.
+    """
+    dk = {}
+    ci = {}
+    for g in games:
+        key = (str(g.get("away_team", "")), str(g.get("home_team", "")))
+        if not key[0] or not key[1]:
+            continue
+        if g.get("source") == "vsin_dk":
+            dk[key] = g
+        elif g.get("source") == "vsin_circa":
+            ci[key] = g
+
+    shared = set(dk) & set(ci)
+    if len(shared) < 5:
+        # Too few to judge. Circa posts a selective card (46 of 121 CFB games
+        # on 2026-09-12), and some sports it does not cover at all.
+        return games
+
+    same = 0
+    compared = 0
+    for key in shared:
+        try:
+            a = float(dk[key].get("spread_away_handle_pct") or -1)
+            b = float(ci[key].get("spread_away_handle_pct") or -1)
+        except (TypeError, ValueError):
+            continue
+        if a < 0 or b < 0:
+            continue
+        compared += 1
+        if a == b:
+            same += 1
+
+    if compared < 5:
+        return games
+
+    frac = same / compared
+    if frac <= BOOK_IDENTICAL_THRESHOLD:
+        print(f"  [books] DK vs Circa differ on handle in "
+              f"{compared - same}/{compared} shared games -- book toggle OK.")
+        return games
+
+    print(f"  [books] *** BOOK TOGGLE FAILURE for {sport.upper()} ***")
+    print(f"  [books] *** {same}/{compared} shared games have IDENTICAL "
+          f"spread handle %. ***")
+    print(f"  [books] *** Real books are ~0% identical on handle. Circa rows "
+          f"are DraftKings data. ***")
+    print(f"  [books] *** Dropping {len(ci)} Circa row(s) rather than writing "
+          f"duplicated DK data under a second label. ***")
+    return [g for g in games if g.get("source") != "vsin_circa"]
 
 
 def _driver_is_alive(driver) -> bool:
@@ -2876,6 +2955,8 @@ def scrape_all(sport: str, sources: list[str] | None = None, driver=None) -> tup
         except Exception:
             pass
         driver = None
+
+    all_games = _verify_books_differ(all_games, sport)
 
     print(f"\n  Total: {len(all_games)} game records across all sources")
     return all_games, driver
@@ -3034,20 +3115,36 @@ def save_data(games: list[dict], sport: str, is_closing: bool = False):
     if is_closing:
         close_path = DATA_DIR / "closing" / f"{sport}_{today}.csv"
         if close_path.exists():
-            _safe_csv_write(df, close_path, mode="a", header=False)
+            ok = _safe_csv_write(df, close_path, mode="a", header=False)
+        else:
+            ok = _safe_csv_write(df, close_path, mode="w", header=True)
+        if ok:
             print(f"  Closing: {close_path} (+{len(df)} rows)")
         else:
-            _safe_csv_write(df, close_path, mode="w", header=True)
-            print(f"  Closing: {close_path} ({len(df)} rows)")
+            # Closing lines are not recoverable later -- VSiN drops the slate
+            # around 9am ET -- so a failed write here is permanent data loss.
+            print(f"  *** CLOSING WRITE FAILED: {close_path} ***")
+            print(f"  *** {len(df)} closing row(s) parked in a .pending file. "
+                  f"Nothing merges the closing path automatically -- merge by "
+                  f"hand before the slate rolls over. ***")
 
     # Time series (one file per sport per day, append every scrape)
     ts_path = DATA_DIR / "timeseries" / f"{sport}_{today}.csv"
     _merge_pending_files(ts_path)  # Merge any previously failed writes
     if ts_path.exists():
-        _safe_csv_write(df, ts_path, mode="a", header=False)
+        ok = _safe_csv_write(df, ts_path, mode="a", header=False)
     else:
-        _safe_csv_write(df, ts_path, mode="w", header=True)
-    print(f"  Timeseries: {ts_path} (+{len(df)} rows)")
+        ok = _safe_csv_write(df, ts_path, mode="w", header=True)
+    # Do NOT report success unconditionally. _safe_csv_write returns False
+    # when every retry failed and the rows went to a .pending file instead;
+    # the old code printed "+N rows" regardless, so a run that saved nothing
+    # looked identical to a healthy one and the workflow went green.
+    if ok:
+        print(f"  Timeseries: {ts_path} (+{len(df)} rows)")
+    else:
+        print(f"  *** TIMESERIES WRITE FAILED: {ts_path} ***")
+        print(f"  *** {len(df)} row(s) parked in a .pending file. They merge on "
+              f"the next successful write to this path. ***")
 
 
 def auto_close_check(games: list[dict], sport: str, window_minutes: int = 10):
