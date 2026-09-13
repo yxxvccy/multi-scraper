@@ -1,47 +1,63 @@
 name: Collect Split History
 
-# Nightly harvest of VSiN's splits_history.php.
+# ---------------------------------------------------------------------------
+# Harvest VSiN's splits_history.php. This is now the PRIMARY source of line
+# history and closing lines; scrape.yml is the independent record and fallback.
+# ---------------------------------------------------------------------------
+# WHY THE MIDDAY RUN EXISTS  (measured 2026-09-13, 121 CFB games)
 #
-# WHY A SEPARATE WORKFLOW: GitHub delays and drops this repo's scheduled runs.
-# Observed 2026-09-12: an 11:21 AM cron fired at 1:45 PM (2h24m late) and the
-# 2:53 PM cron never fired. A closing-line capture that needs a cron to land
-# inside a 75-minute pre-kick window is unreliable by construction.
+# "Last 25 Changes" is a COUNT cap, not a time window, so its reach depends
+# entirely on how much action a game is taking:
 #
-# VSiN stops recording line changes at kickoff, so one call per game AFTER the
-# slate returns the whole pre-kick run-up at ~5-min resolution plus the true
-# opener. This job must run EVENTUALLY, not PRECISELY.
+#   heavily-bet game, game day  -> 25 changes span 2.5–8 hours
+#   same game, days out         -> 25 changes span days or weeks
 #
-# TIMING: the harvester reads gamecodes from the live splits page, which lists
-# upcoming games. VSiN keeps serving completed games until ~9am ET next day, so
-# an overnight run still sees the slate. Safe window is late the same evening,
-# once everything has kicked.
+# The cap therefore bites hardest on exactly the games worth studying. A
+# post-slate harvest alone would capture only the final few hours of every
+# game that mattered.
 #
-# --skip-if-exists makes repeats free: whichever attempt lands first does the
-# work. NOTE: the 12:53 AM run falls on the NEXT calendar day, so it writes a
-# file named for that day -- it's a fallback for a missed evening, not a top-up.
+# The fix is to harvest while the window is still wide. Next week's games are
+# already listed and already accumulating changes (Saturday's harvest returned
+# 20260919 and 20260926 gamecodes reaching back 150–1,100 hours). Harvest
+# daily and the early history is captured before action compresses the window.
 #
-# DST: UTC times are correct for EDT (through Sat Nov 1 2026). Add one hour
-# to each when the US falls back to EST.
+# This only works because writes are DEDUPED on
+# (gamecode, source, kind, ts_iso, side). Each run adds whatever is new;
+# entries that later fall out of VSiN's 25-change window remain in our file.
+# Accumulated across days, that reconstructs the complete move history --
+# including the midweek stretch the cap cannot reach on game day.
+#
+#   Wed harvest: game has 10 changes      -> capture 10
+#   Fri harvest: 20 changes               -> capture 10 new
+#   Sat post-slate: 40 total, VSiN shows 25 -> capture the new ones;
+#                   changes 1–15 have fallen out of VSiN but are already ours
+#
+# TIMING: the harvester reads gamecodes off the live splits page, which drops
+# completed games around 9am ET the next morning. The evening runs must land
+# the same night. (Once gamecode is persisted in the timeseries CSV, the
+# harvester can work from our own records instead and this stops mattering.)
+#
+# DAYLIGHT SAVING: plain daily times. After Sun Nov 1 2026 they land an hour
+# earlier in ET; the evening runs stay comfortably inside the same-night
+# window, so nothing needs changing.
+# ---------------------------------------------------------------------------
 
 on:
   schedule:
-    - cron: '7 2 * * *'     # 10:07 PM ET (previous day)
-    - cron: '21 3 * * *'    # 11:21 PM ET (previous day)
-    - cron: '53 4 * * *'    # 12:53 AM ET
+    - cron: '7 17 * * *'    #  1:07 PM ET — midweek capture, windows still wide
+    - cron: '7 2 * * *'     # 10:07 PM ET — post-slate, same night
+    - cron: '21 3 * * *'    # 11:21 PM ET — backup for the post-slate run
   workflow_dispatch:
     inputs:
       sports:
         description: 'Space-separated sports to harvest'
         required: false
         default: 'cfb nfl'
-      force:
-        description: 'Ignore --skip-if-exists and re-harvest'
-        type: boolean
-        required: false
-        default: false
 
 concurrency:
-  # Never let two attempts harvest at once -- they would double-append.
+  # Two harvests at once would each read the file before the other writes,
+  # so both would think their rows are new. Dedupe protects across runs,
+  # not within a race.
   group: collect-history
   cancel-in-progress: false
 
@@ -64,19 +80,23 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
+      # mkdir -p so the commit step cannot die on a missing directory, and
+      # exit $fail so a broken harvest turns the run RED at the real failure.
+      # The previous `|| echo "continuing"` swallowed a missing script and
+      # surfaced it two steps later as an opaque git exit 128.
       - name: Harvest split history
         env:
           TZ: America/New_York
         run: |
           SPORTS="${{ github.event.inputs.sports || 'cfb nfl' }}"
-          SKIP="--skip-if-exists"
-          if [ "${{ github.event.inputs.force }}" = "true" ]; then SKIP=""; fi
+          mkdir -p data/history
+          fail=0
           for s in $SPORTS; do
             echo "::group::$s"
-            python collect_history.py --sport "$s" $SKIP || \
-              echo "harvest failed for $s (continuing)"
+            python collect_history.py --sport "$s" || { echo "::error::harvest failed for $s"; fail=1; }
             echo "::endgroup::"
           done
+          exit $fail
 
       - name: Upload failed fragments
         if: always()
@@ -88,6 +108,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Commit history
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
