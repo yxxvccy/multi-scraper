@@ -3,3 +3,15 @@ __pycache__/
 data/snapshots/
 data/raw_html/
 *.bak
+
+# Backups from the anchored-edit patch scripts. The *.bak rule above does NOT
+# match these -- they end in a timestamp, e.g. multi_scraper.py.bak.20260912_143139
+*.bak.*
+
+# One-shot diagnostic dumps (probe_vsin_local.py, probe_history_payload2.py)
+vsin_*.html
+
+# Pending-write files from _safe_csv_write when a CSV is locked by Excel
+*.pending_*.csv
+
+.venv/

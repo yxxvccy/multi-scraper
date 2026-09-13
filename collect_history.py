@@ -293,10 +293,14 @@ def main():
     ap.add_argument("--throttle", type=float, default=1.0,
                     help="seconds between requests (default 1.0)")
     ap.add_argument("--skip-if-exists", action="store_true",
-                    help="exit 0 without fetching if today's output file already "
-                         "exists. Lets several redundant cron attempts run safely: "
-                         "whichever lands first does the work, the rest no-op "
-                         "instead of double-appending.")
+                    help="DEPRECATED and ignored. Writes are now deduplicated on "
+                         "(gamecode, source, kind, ts_iso, side), so repeat runs "
+                         "are idempotent and top up rather than double-append. "
+                         "Existence-based skipping was the wrong primitive: a "
+                         "pre-kickoff test run created the file, which then made "
+                         "the post-slate run skip and permanently lock in "
+                         "incomplete histories. Flag kept so existing workflows "
+                         "do not break.")
     args = ap.parse_args()
 
     # ---- offline test path: no Selenium, no network ----
@@ -311,10 +315,9 @@ def main():
         return
 
     out_path = HIST_DIR / f"{args.sport}_{datetime.now():%Y%m%d}.csv"
-    if args.skip_if_exists and out_path.exists() and out_path.stat().st_size > 0:
-        print(f"{out_path} already exists ({out_path.stat().st_size:,} bytes) "
-              f"-- an earlier attempt succeeded. Nothing to do.")
-        return
+    if args.skip_if_exists:
+        print("note: --skip-if-exists is deprecated and ignored; writes are "
+              "deduplicated instead, so repeat runs top up safely.")
 
     from multi_scraper import SOURCES, fetch_vsin, get_driver
     from selenium.webdriver.common.by import By
@@ -403,14 +406,54 @@ def main():
         print("nothing to write")
         return
 
+    # ---- dedupe against whatever is already in the file ----
+    #
+    # A history entry is uniquely identified by
+    #   (gamecode, source, kind, ts_iso, side)
+    # and its values never change once written: VSiN stops recording changes
+    # at kickoff, so an entry is immutable the moment it exists. That makes
+    # append-with-dedupe safe and makes every run idempotent -- a pre-slate
+    # run is topped up by a post-slate one instead of blocking it, and the
+    # redundant cron attempts cost nothing.
+    def key(r):
+        return (r["gamecode"], r["source"], r["kind"], r["ts_iso"], r["side"])
+
     out = out_path
+    existing = set()
+    if out.exists():
+        try:
+            with open(out, newline="", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    existing.add((r.get("gamecode", ""), r.get("source", ""),
+                                  r.get("kind", ""), r.get("ts_iso", ""),
+                                  r.get("side", "")))
+        except Exception as e:
+            print(f"could not read existing {out.name} for dedupe: {e}")
+            print("refusing to append blind -- fix or remove the file first.")
+            return
+
+    # Dedupe within this batch too; a game can appear twice across sources.
+    seen, fresh = set(), []
+    for r in all_rows:
+        k = key(r)
+        if k in existing or k in seen:
+            continue
+        seen.add(k)
+        fresh.append(r)
+
+    dupes = len(all_rows) - len(fresh)
+    if not fresh:
+        print(f"nothing new -- all {len(all_rows)} rows already in {out.name}")
+        return
+
     exists = out.exists()
     with open(out, "a", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         if not exists:
             w.writeheader()
-        w.writerows(all_rows)
-    print(f"wrote {out} (+{len(all_rows)} rows)")
+        w.writerows(fresh)
+    print(f"wrote {out} (+{len(fresh)} new rows"
+          + (f", {dupes} already present)" if dupes else ")"))
 
 
 if __name__ == "__main__":

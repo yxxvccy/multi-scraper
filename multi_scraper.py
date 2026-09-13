@@ -287,6 +287,10 @@ for d in ["closing", "raw_html", "timeseries"]:
 
 COLUMNS = [
     "timestamp", "source", "book", "sport", "game_id",
+    # VSiN's own game key, e.g. "20260912CFB00130". Persisted so
+    # collect_history.py can harvest split history for a past date from our
+    # records instead of the live page, which drops completed games ~9am ET.
+    "gamecode",
     "game_date", "game_time",
     "away_team", "home_team",
     "spread_line",
@@ -1159,6 +1163,7 @@ def _parse_vsin_sp_table(soup, source_key: str, sport: str) -> list[dict]:
             game["source"]     = source_key
             game["book"]       = src["book"]
             game["sport"]      = sport
+            game["gamecode"]   = gamecode
             game["game_date"]  = current_date
             game["away_team"]  = a["team"]
             game["home_team"]  = h["team"]
@@ -1348,6 +1353,8 @@ def _parse_vsin_legacy(html: str, source_key: str, sport: str) -> list[dict]:
         game["source"] = source_key
         game["book"] = src["book"]
         game["sport"] = sport
+        # The legacy layout does not always carry a gamecode; blank is fine.
+        game["gamecode"] = gc
         game["game_date"] = current_date
         game["away_team"] = away_team
         game["home_team"] = home_team
