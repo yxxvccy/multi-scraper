@@ -2065,7 +2065,8 @@ def assign_game_ids(games: list[dict], sport: str):
     stashes the raw YYYYMMDD on the record; prefer that.
     """
     for game in games:
-        authoritative = str(game.get("_espn_date_yyyymmdd", "") or "")
+        _m = re.match(r"^(\d{8})", str(game.get("gamecode", "") or ""))
+        authoritative = (_m.group(1) if _m else "") or str(game.get("_espn_date_yyyymmdd", "") or "")
         game["game_id"] = make_game_id(
             sport,
             authoritative or str(game.get("game_date", "")),
