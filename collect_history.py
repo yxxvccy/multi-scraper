@@ -128,6 +128,31 @@ class NotCovered(Exception):
     """
 
 
+def _derive_game_id(gamecode: str, sport: str, away: str, home: str) -> str:
+    """Build the same game_id that multi_scraper writes to the timeseries.
+
+    The history fragment carries both team names and the gamecode carries the
+    authoritative date, so the id is derivable here -- no timeseries lookup, no
+    dependency on whether the scrape ran before or after this harvest.
+
+    Reuses make_game_id rather than reimplementing its normalisation. These ids
+    are worth having only if they are byte-identical to the ones the dashboard
+    already keys on, so a local copy that drifted from make_game_id would be
+    worse than the empty column it replaces. Verified against the committed
+    timeseries: 60/60 exact matches, 0 mismatches.
+
+    Returns "" when the gamecode carries no date (the offline --test path
+    passes "TEST"), so make_game_id's today-fallback never fires here -- an
+    id stamped with the harvest date would silently fail to join.
+    """
+    if not re.match(r"^\d{8}", str(gamecode or "")):
+        return ""
+    # Imported lazily: main() already pulls multi_scraper in, but --test must
+    # stay runnable without selenium installed.
+    from multi_scraper import make_game_id
+    return make_game_id(sport, str(gamecode)[:8], away, home)
+
+
 def parse_history(html: str, gamecode: str, source: str, sport: str,
                   game_id: str = "") -> list[dict]:
     """Parse one splits_history.php fragment into long-format rows.
@@ -135,6 +160,10 @@ def parse_history(html: str, gamecode: str, source: str, sport: str,
     Raises NotCovered when the book simply doesn't offer the game.
     Raises ValueError when the fragment IS a card but doesn't parse -- the
     caller saves that one for inspection rather than guessing.
+
+    game_id is derived from the gamecode and team names when not supplied, so
+    these rows join to the timeseries (and to the dashboard, which keys on
+    game_id throughout) without a lookup table.
     """
     if "sp-game-card-wrap" not in html:
         raise NotCovered(f"{source} does not post {gamecode}")
@@ -229,6 +258,26 @@ def parse_history(html: str, gamecode: str, source: str, sport: str,
 
     if not out:
         raise ValueError("parsed zero entries")
+
+    if not game_id:
+        # Every entry in a card restates the same two teams. When that holds,
+        # the id is unambiguous. When it doesn't, the team-cell cleanup left
+        # residue on some rows and picking whichever name landed first would
+        # be a plausible wrong id -- so leave game_id empty instead.
+        #
+        # Deliberately NOT a ValueError: that would discard the whole card,
+        # and a card is unrecoverable once the 25-change window rotates past
+        # it, whereas a missing game_id can be backfilled from this same file
+        # at any time. A blank cell is recoverable; a lost harvest is not.
+        # main() counts the blanks so they don't sit unnoticed.
+        aways = {r["team"] for r in out if r["side"] == "away"}
+        homes = {r["team"] for r in out if r["side"] == "home"}
+        if len(aways) == 1 and len(homes) == 1:
+            gid = _derive_game_id(gamecode, sport, aways.pop(), homes.pop())
+            if gid:
+                for r in out:
+                    r["game_id"] = gid
+
     return out
 
 
@@ -392,6 +441,14 @@ def main():
     for src, n in sorted(not_covered.items()):
         print(f"  {src}: {n} game(s) not posted by this book (expected)")
     print(f"  real parse failures: {len(failures)}")
+    # A row with no game_id cannot be joined to the timeseries or shown in the
+    # dashboard, which keys on game_id. Count it rather than let it slip
+    # through as a blank column nobody notices -- that is how this column sat
+    # empty through three harvests.
+    no_gid = {r["gamecode"] for r in all_rows if not r.get("game_id")}
+    if no_gid:
+        print(f"  WARNING: {len(no_gid)} game(s) produced no game_id "
+              f"(unjoinable): {sorted(no_gid)[:5]}")
     for gc, src, why in failures[:10]:
         print(f"  FAIL {gc} {src}: {why}  -> fragment saved to data/raw_html/")
     if failures:
