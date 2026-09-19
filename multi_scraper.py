@@ -425,7 +425,151 @@ def get_driver():
     except Exception:
         pass  # CDP commands may not be available in all Chrome versions
 
+    _load_vsin_cookies(driver)
     return driver
+
+
+# ============================================================
+# VSiN PRO SESSION  (added 2026-09-19)
+# ============================================================
+# On 2026-09-16 VSiN moved betting splits behind VSiN Pro. Anonymous visitors
+# now get ONE game per page plus "N more games on today's board ... for VSiN
+# Pro subscribers", and splits_history.php returns "Source comparisons are for
+# VSiN Pro subscribers." A 1-game page parses cleanly, so every run from 9/16
+# to 9/19 went green while saving almost nothing.
+#
+# Fix: reuse a logged-in browser session. The cookies are exported from the
+# owner's Chrome (Cookie-Editor -> Export -> JSON, on data.vsin.com) and passed
+# in via the VSIN_COOKIES env var (GitHub secret) or a local file named by
+# VSIN_COOKIES_FILE. No password is stored anywhere.
+#
+# The session expires every month or two. When it does, fetch_vsin sees the
+# paywall and exits non-zero (VSiNAuthError), so the workflow goes RED and
+# GitHub emails you, instead of silently saving one game per run.
+# Refresh: log in again in Chrome, re-export, update the secret.
+
+VSIN_PAYWALL_MARKERS = (
+    "more games on today's board",
+    "for vsin pro subscribers",
+)
+
+
+class VSiNAuthError(SystemExit):
+    """Raised when VSiN serves the anonymous/paywalled page.
+
+    Subclasses SystemExit on purpose: scrape_source() wraps fetches in a broad
+    `except Exception`, which would otherwise swallow this and return [] --
+    the exact silent failure this exists to prevent.
+    """
+    def __init__(self, msg: str):
+        print(f"::error title=VSiN session expired::{msg}")
+        print(f"  *** {msg} ***")
+        super().__init__(3)
+
+
+def _parse_cookie_blob(blob: str) -> list[dict]:
+    """Accept a JSON export (Cookie-Editor / EditThisCookie: a list of
+    {name, value, domain, path, secure, httpOnly, expirationDate}) or a
+    Netscape cookies.txt. Returns CDP Network.setCookies params."""
+    blob = (blob or "").strip()
+    if not blob:
+        return []
+    out = []
+    if blob[0] in "[{":
+        data = json.loads(blob)
+        if isinstance(data, dict):
+            data = data.get("cookies", [])
+        for c in data:
+            if not c.get("name"):
+                continue
+            ck = {
+                "name": c["name"],
+                "value": str(c.get("value", "")),
+                "domain": c.get("domain") or ".vsin.com",
+                "path": c.get("path") or "/",
+                "secure": bool(c.get("secure", True)),
+                "httpOnly": bool(c.get("httpOnly", False)),
+            }
+            exp = c.get("expirationDate") or c.get("expires") or c.get("expiry")
+            if exp and float(exp) > 0:
+                ck["expires"] = float(exp)
+            ss = str(c.get("sameSite") or "").lower()
+            ck["sameSite"] = {"strict": "Strict", "lax": "Lax",
+                              "none": "None", "no_restriction": "None"}.get(ss, "Lax")
+            out.append(ck)
+    else:  # Netscape cookies.txt
+        for line in blob.splitlines():
+            http_only = line.startswith("#HttpOnly_")
+            if http_only:
+                line = line[len("#HttpOnly_"):]
+            if not line.strip() or line.startswith("#"):
+                continue
+            parts = line.split("\t")
+            if len(parts) < 7:
+                continue
+            domain, _flag, path, secure, expires, name, value = parts[:7]
+            ck = {"name": name, "value": value, "domain": domain, "path": path,
+                  "secure": secure.upper() == "TRUE", "httpOnly": http_only}
+            if expires.isdigit() and int(expires) > 0:
+                ck["expires"] = float(expires)
+            out.append(ck)
+    # Only VSiN cookies: never ship anything else into the runner's browser.
+    return [c for c in out if c["domain"].lstrip(".").endswith("vsin.com")]
+
+
+def _load_vsin_cookies(driver) -> int:
+    """Install the VSiN Pro session into a fresh driver. Returns count."""
+    blob = os.environ.get("VSIN_COOKIES", "")
+    path = os.environ.get("VSIN_COOKIES_FILE", "")
+    if not blob and path and Path(path).exists():
+        blob = Path(path).read_text(encoding="utf-8")
+    if not blob:
+        print("  [vsin] No VSIN_COOKIES provided -- running anonymous "
+              "(VSiN will serve 1 game per page).")
+        return 0
+    try:
+        cookies = _parse_cookie_blob(blob)
+    except Exception as e:
+        print(f"::error title=VSIN_COOKIES unreadable::{e}")
+        raise SystemExit(3)
+    if not cookies:
+        print("::error title=VSIN_COOKIES empty::no vsin.com cookies found in export")
+        raise SystemExit(3)
+
+    now = time.time()
+    expired = [c["name"] for c in cookies if c.get("expires") and c["expires"] < now]
+    live = [c for c in cookies if not (c.get("expires") and c["expires"] < now)]
+    try:
+        driver.execute_cdp_cmd("Network.enable", {})
+        driver.execute_cdp_cmd("Network.setCookies", {"cookies": live})
+    except Exception as e:
+        print(f"::error title=Could not install VSiN cookies::{e}")
+        raise SystemExit(3)
+
+    soonest = min((c["expires"] for c in live if c.get("expires")), default=None)
+    msg = f"  [vsin] Installed {len(live)} VSiN session cookie(s)"
+    if expired:
+        msg += f"; skipped {len(expired)} already expired ({', '.join(expired[:4])})"
+    if soonest:
+        days = (soonest - now) / 86400
+        msg += f"; earliest expiry in {days:.1f} days"
+        if days < 7:
+            print(f"::warning title=VSiN cookie expiring::a session cookie expires in {days:.1f} days -- re-export soon")
+    print(msg)
+    return len(live)
+
+
+def _assert_vsin_authenticated(html: str, source_key: str = ""):
+    low = (html or "").lower()
+    # Require BOTH the paywall copy and a near-empty board. A logged-in page
+    # could plausibly still carry the upsell text in a hidden template; a
+    # full board with that text is fine, a 1-game board with it is not.
+    n_games = len(set(re.findall(r'data-gamecode="([^"]+)"', html or "")))
+    if n_games <= 3 and any(m in low for m in VSIN_PAYWALL_MARKERS):
+        raise VSiNAuthError(
+            f"[{source_key or 'vsin'}] VSiN served the paywalled page -- "
+            f"the Pro session in VSIN_COOKIES is missing or expired. "
+            f"Log in to VSiN in Chrome, re-export cookies, update the secret.")
 
 
 # ============================================================
@@ -518,7 +662,9 @@ def fetch_vsin(url: str, driver, sport: str, source_key: str = "", wait_seconds:
     # chunk. Scroll repeatedly until the rendered row count stops growing.
     _vsin_scroll_until_stable(driver)
 
-    return driver.page_source
+    html = driver.page_source
+    _assert_vsin_authenticated(html, source_key)
+    return html
 
 
 def _vsin_scroll_until_stable(driver, max_scrolls: int = 25, pause: float = 0.6):
@@ -2967,6 +3113,11 @@ def scrape_all(sport: str, sources: list[str] | None = None, driver=None) -> tup
 # MULTI-SPORT BATCH SCRAPING
 # ============================================================
 
+# In-season floors (DK posts the whole card). Off-season / bye weeks will
+# trip these; they only warn.
+MIN_GAMES_PER_SOURCE = {"cfb": 20, "nfl": 10}
+
+
 def scrape_batch(sports: list[str], sources: list[str] | None = None,
                  auto_close_window: int = 0):
     """Scrape multiple sports in one session (shares a single browser).
@@ -2991,6 +3142,18 @@ def scrape_batch(sports: list[str], sources: list[str] | None = None,
         games, driver = scrape_all(sport, sources, driver=driver)
         save_data(games, sport)
         all_results[sport] = len(games)
+
+        # Tripwire: a football board should never be this thin in season.
+        # 9/16-9/19 saved 1 game/source and went green; don't let a new
+        # failure mode (not caught by the paywall check) do that again.
+        floor = MIN_GAMES_PER_SOURCE.get(sport, 0)
+        per_src = {}
+        for g in games:
+            per_src[g.get("source")] = per_src.get(g.get("source"), 0) + 1
+        thin = {k: v for k, v in per_src.items() if v < floor} if per_src else {"all": 0}
+        if floor and thin:
+            print(f"::warning title=Thin {sport.upper()} board::"
+                  f"{thin} games per source, expected >= {floor}")
 
         # Check for imminent games and save closing lines
         if auto_close_window > 0 and games:

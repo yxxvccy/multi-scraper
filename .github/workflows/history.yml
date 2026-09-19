@@ -87,6 +87,10 @@ jobs:
       - name: Harvest split history
         env:
           TZ: America/New_York
+          # VSiN Pro session (splits paywalled since 2026-09-16). Cookie-Editor
+          # JSON export from data.vsin.com. Expires every 1-2 months; the run
+          # fails with 'VSiN session expired' when it needs refreshing.
+          VSIN_COOKIES: ${{ secrets.VSIN_COOKIES }}
         run: |
           SPORTS="${{ github.event.inputs.sports || 'cfb nfl' }}"
           mkdir -p data/history

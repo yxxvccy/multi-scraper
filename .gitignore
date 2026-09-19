@@ -15,3 +15,6 @@ vsin_*.html
 *.pending_*.csv
 
 .venv/
+# VSiN session exports -- never commit
+vsin_cookies*.json
+cookies.txt
