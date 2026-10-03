@@ -46,7 +46,7 @@ on:
       sports:
         description: 'Sports to scrape (space-separated)'
         required: false
-        default: 'nfl cfb'
+        default: 'nfl cfb mlb nhl wnba ucl epl cbb wcbb'
 
 jobs:
   scrape:
