@@ -52,7 +52,7 @@ on:
       sports:
         description: 'Space-separated sports to harvest'
         required: false
-        default: 'cfb nfl'
+        default: 'cfb nfl mlb nhl wnba elc epl cbb wcbb'
 
 concurrency:
   # Two harvests at once would each read the file before the other writes,
