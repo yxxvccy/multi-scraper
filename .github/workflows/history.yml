@@ -52,7 +52,7 @@ on:
       sports:
         description: 'Space-separated sports to harvest'
         required: false
-        default: 'cfb nfl mlb nhl wnba elc epl cbb wcbb'
+        default: 'cfb nfl mlb nhl wnba ucl epl cbb wcbb'
 
 concurrency:
   # Two harvests at once would each read the file before the other writes,
@@ -92,7 +92,7 @@ jobs:
           # fails with 'VSiN session expired' when it needs refreshing.
           VSIN_COOKIES: ${{ secrets.VSIN_COOKIES }}
         run: |
-          SPORTS="${{ github.event.inputs.sports || 'cfb nfl' }}"
+          SPORTS="${{ github.event.inputs.sports || 'cfb nfl mlb nhl wnba ucl epl cbb wcbb' }}"
           mkdir -p data/history
           fail=0
           for s in $SPORTS; do
