@@ -86,7 +86,7 @@ jobs:
           # fails with 'VSiN session expired' when it needs refreshing.
           VSIN_COOKIES: ${{ secrets.VSIN_COOKIES }}
         run: |
-          SPORTS="${{ github.event.inputs.sports || 'nfl cfb' }}"
+          SPORTS="${{ github.event.inputs.sports || 'nfl cfb mlb nhl wnba ucl epl cbb wcbb' }}"
           python multi_scraper.py --batch $SPORTS --once --auto-close 75
 
       - name: Upload raw HTML for debugging
