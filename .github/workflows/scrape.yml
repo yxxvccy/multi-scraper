@@ -46,7 +46,7 @@ on:
       sports:
         description: 'Sports to scrape (space-separated)'
         required: false
-        default: 'nfl cfb mlb nhl wnba ucl epl cbb wcbb'
+        default: 'nfl cfb mlb nhl nba wnba ucl epl cbb wcbb'
 
 jobs:
   scrape:
@@ -73,7 +73,8 @@ jobs:
 
       # --auto-close 75 is retained but is now INCIDENTAL. A game only lands in
       # the window by luck. Closing lines come from history.yml.
-      # Add basketball in November: nfl cfb cbb wcbb nba
+      # nba added 2026-10-21 (season opener 10/20). Marker "NBA" -- longest-first
+      # matching keeps WNBA rows out.
       # NOTE: verify cbb's gamecode_league first --
       #   python verify_gamecode_markers.py cbb
       # It declares "NCAAB", the same unverified guess that "NCAAF" was, and
@@ -86,7 +87,7 @@ jobs:
           # fails with 'VSiN session expired' when it needs refreshing.
           VSIN_COOKIES: ${{ secrets.VSIN_COOKIES }}
         run: |
-          SPORTS="${{ github.event.inputs.sports || 'nfl cfb mlb nhl wnba ucl epl cbb wcbb' }}"
+          SPORTS="${{ github.event.inputs.sports || 'nfl cfb mlb nhl nba wnba ucl epl cbb wcbb' }}"
           python multi_scraper.py --batch $SPORTS --once --auto-close 75
 
       - name: Upload raw HTML for debugging
