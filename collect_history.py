@@ -31,12 +31,17 @@ emitting partial rows, saving the fragment for inspection.
 """
 import argparse
 import csv
+import json
+import os
 import re
 import sys
 import time
 from collections import Counter
 from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
+
+import vsin_guard
 
 try:
     from bs4 import BeautifulSoup
@@ -331,6 +336,165 @@ def _report(rows, label):
                   f"tot={r['total']!s:>6}")
 
 
+# ---------------------------------------------------------------------------
+# Fetch planning (added 2026-11-01 after the VSiN lockout)
+# ---------------------------------------------------------------------------
+# Before: every run re-requested every game on the board from BOTH books --
+# finished games whose history can no longer change, games a week out whose
+# 25-change window is still wide, and Circa for games Circa never posts.
+# Now each (gamecode, source) carries a little state and the plan skips
+# calls that cannot return anything new.
+#
+#   done        game date is past AND we fetched it after that ET day ended.
+#               VSiN stops recording at kickoff, so that fetch was final.
+#   far out     game date > today: once per FUTURE_REFETCH_H is enough while
+#               the window is still wide.
+#   today       at most once per TODAY_MIN_GAP_H (midday + post-slate).
+#   Circa n/c   Circa did not post it last time: recheck once per FUTURE_REFETCH_H.
+#
+# Priority when the budget binds: overdue (about to drop off the board) >
+# today > tomorrow > later; DK before Circa within each.
+
+STATE_FILE = HIST_DIR / "_fetch_state.json"
+FUTURE_REFETCH_H = 20
+TODAY_MIN_GAP_H = 1
+FUTURE_CAP = int(os.environ.get("VSIN_FUTURE_CAP") or 80)   # per sport per run
+RECOVER_DAYS = 1           # look back this many game-days in our own records
+_RATE_LIMITED = [None]
+
+
+def _load_state() -> dict:
+    try:
+        return json.loads(STATE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _save_state(state: dict):
+    cutoff = (datetime.now(vsin_guard.ET) - timedelta(days=10)).strftime("%Y%m%d")
+    state = {k: v for k, v in state.items() if k[:8] >= cutoff}
+    tmp = STATE_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, indent=0, sort_keys=True), encoding="utf-8")
+    tmp.replace(STATE_FILE)
+
+
+def _mark(state, gc, src, not_covered=False):
+    state[f"{gc}|{src}"] = {"last": vsin_guard.now_utc().isoformat(timespec="seconds"),
+                            "nc": bool(not_covered)}
+
+
+def _game_date(gc: str):
+    m = re.match(r"(\d{8})", gc or "")
+    if not m:
+        return None
+    try:
+        return datetime.strptime(m.group(1), "%Y%m%d").date()
+    except ValueError:
+        return None
+
+
+def _plan(codes, sources, state, circa_card=None):
+    now = vsin_guard.now_utc()
+    today = now.astimezone(vsin_guard.ET).date()
+    plan, skipped = [], Counter()
+    for gc in codes:
+        gd = _game_date(gc)
+        for src in sources:
+            st = state.get(f"{gc}|{src}") or {}
+            last = None
+            if st.get("last"):
+                try:
+                    last = datetime.fromisoformat(st["last"])
+                except ValueError:
+                    last = None
+            age_h = (now - last).total_seconds() / 3600 if last else None
+            if gd is None:
+                bucket = 2
+            elif gd < today:
+                last_et_date = last.astimezone(vsin_guard.ET).date() if last else None
+                if last_et_date and last_et_date > gd:
+                    skipped["done"] += 1
+                    continue
+                bucket = 0
+            elif gd == today:
+                bucket = 1
+                if age_h is not None and age_h < TODAY_MIN_GAP_H:
+                    skipped["fetched <1h ago"] += 1
+                    continue
+            else:
+                bucket = 2 if (gd - today).days == 1 else 3
+                if age_h is not None and age_h < FUTURE_REFETCH_H:
+                    skipped["future, fresh"] += 1
+                    continue
+            if src == "CIRCA" and circa_card and gc not in circa_card:
+                skipped["not on Circa card"] += 1
+                continue
+            if st.get("nc") and age_h is not None and age_h < FUTURE_REFETCH_H \
+                    and bucket != 0:
+                skipped[f"{src} not posted"] += 1
+                continue
+            plan.append((bucket, 0 if src == "DK" else 1, gc, src))
+    plan.sort(key=lambda t: (t[0], t[1]))
+    # Future games rotate through: their 25-change window is still wide, so
+    # a game deferred today loses nothing. This keeps a big midweek CFB board
+    # from eating the budget that today's games (other sports) need.
+    out, n_future = [], 0
+    for b, _, gc, src in plan:
+        if b >= 2:
+            if n_future >= FUTURE_CAP:
+                skipped["future, deferred"] += 1
+                continue
+            n_future += 1
+        out.append((gc, src))
+    return out, skipped
+
+
+def _circa_card(sport: str) -> set:
+    """Gamecodes the scraper actually saw on Circa's board (today/yesterday).
+    Empty set = unknown, so the planner falls back to probing."""
+    today = datetime.now(vsin_guard.ET).date()
+    card = set()
+    for d in (0, 1):
+        f = Path("data") / "timeseries" / f"{sport}_{(today - timedelta(days=d)):%Y%m%d}.csv"
+        if not f.exists():
+            continue
+        try:
+            with open(f, newline="", encoding="utf-8") as fh:
+                for r in csv.DictReader(fh):
+                    if r.get("source") == "vsin_circa" and r.get("gamecode"):
+                        card.add(r["gamecode"].strip())
+        except Exception:
+            pass
+    return card
+
+
+def _recent_codes_from_records(sport: str):
+    """Gamecodes dated within RECOVER_DAYS before today, from our own history
+    and timeseries CSVs -- so a game that already fell off VSiN's board still
+    gets its final post-kickoff harvest."""
+    today = datetime.now(vsin_guard.ET).date()
+    lo = today - timedelta(days=RECOVER_DAYS)
+    out = []
+    files = []
+    for d in range(RECOVER_DAYS + 2):
+        day = (today - timedelta(days=d)).strftime("%Y%m%d")
+        files += [HIST_DIR / f"{sport}_{day}.csv",
+                  Path("data") / "timeseries" / f"{sport}_{day}.csv"]
+    for f in files:
+        if not f.exists():
+            continue
+        try:
+            with open(f, newline="", encoding="utf-8") as fh:
+                for r in csv.DictReader(fh):
+                    gc = (r.get("gamecode") or "").strip()
+                    gd = _game_date(gc)
+                    if gd and lo <= gd < today:
+                        out.append(gc)
+        except Exception as e:
+            print(f"  could not read {f} for recovery: {e}")
+    return list(dict.fromkeys(out))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--test", metavar="FILE",
@@ -339,8 +503,10 @@ def main():
     ap.add_argument("--dry-run", action="store_true",
                     help="fetch only the first 3 games and print, no CSV")
     ap.add_argument("--sources", default="DK,CIRCA")
-    ap.add_argument("--throttle", type=float, default=1.0,
-                    help="seconds between requests (default 1.0)")
+    ap.add_argument("--throttle", type=float, default=None,
+                    help="override VSIN_MIN_GAP: min seconds between requests "
+                         f"(default {vsin_guard.MIN_GAP}). Was 1.0 until the "
+                         "2026-11-01 lockout.")
     ap.add_argument("--skip-if-exists", action="store_true",
                     help="DEPRECATED and ignored. Writes are now deduplicated on "
                          "(gamecode, source, kind, ts_iso, side), so repeat runs "
@@ -351,6 +517,8 @@ def main():
                          "incomplete histories. Flag kept so existing workflows "
                          "do not break.")
     args = ap.parse_args()
+    if args.throttle is not None:
+        vsin_guard.MIN_GAP = args.throttle
 
     # ---- offline test path: no Selenium, no network ----
     if args.test:
@@ -368,7 +536,11 @@ def main():
         print("note: --skip-if-exists is deprecated and ignored; writes are "
               "deduplicated instead, so repeat runs top up safely.")
 
-    from multi_scraper import SOURCES, fetch_vsin, get_driver
+    # Exits 0 here, before any request, while a VSiN lockout is active.
+    vsin_guard.start_run("history", args.sport)
+
+    from multi_scraper import (SOURCES, fetch_vsin, get_driver,
+                               _gamecode_cross_league_check)
     from selenium.webdriver.common.by import By
 
     url = SOURCES["vsin_dk"]["url_fn"](args.sport)
@@ -378,19 +550,54 @@ def main():
     HIST_DIR.mkdir(parents=True, exist_ok=True)
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
+    state = _load_state()
+    is_foreign, _, _ = _gamecode_cross_league_check(args.sport)
+    sources = [s.strip().upper() for s in args.sources.split(",") if s.strip()]
+
     driver = get_driver()
     all_rows, failures = [], []
     not_covered = Counter()
+    rate_limited = None
     try:
         print(f"loading {url} ...")
         fetch_vsin(url, driver, args.sport, source_key="vsin_dk")
         btns = driver.find_elements(By.CSS_SELECTOR, "button.sp-act-history")
-        codes = [b.get_attribute("data-gamecode") for b in btns]
-        codes = [c for c in dict.fromkeys(codes) if c]
-        print(f"gamecodes: {len(codes)}")
+        board = [b.get_attribute("data-gamecode") for b in btns]
+        board = [c for c in dict.fromkeys(board) if c]
+        # 2026-11-01: the epl/ucl/wcbb harvests were reading the WHOLE
+        # multi-league board (CFB/NBA/NHL/NFL gamecodes) and re-requesting
+        # every one of those games -- roughly tripling request volume and
+        # writing other sports' history into the wrong files. Apply the same
+        # cross-league filter the scraper uses.
+        own = [c for c in board if not is_foreign(c)]
+        if len(own) < len(board):
+            print(f"  dropped {len(board) - len(own)} other-league gamecode(s) "
+                  f"from the {args.sport} board")
+        # Recovery: games from our own records that may already be off the
+        # live board (VSiN drops finished games ~9am next day, and a dropped
+        # or lockout-skipped run would otherwise lose them for good).
+        recovered = [c for c in _recent_codes_from_records(args.sport)
+                     if c not in own and not is_foreign(c)]
+        if recovered:
+            print(f"  + {len(recovered)} recent gamecode(s) from our own records")
+        codes = own + recovered
+        print(f"gamecodes: {len(codes)} ({len(own)} on board)")
+
+        card = _circa_card(args.sport)
+        if card:
+            print(f"  Circa card from timeseries: {len(card)} game(s)")
+        plan, skipped = _plan(codes, sources, state, card)
+        print(f"  plan: {len(plan)} call(s); skipped {sum(skipped.values())} "
+              f"({', '.join(f'{k} {v}' for k, v in sorted(skipped.items())) or 'none'})")
         if args.dry_run:
-            codes = codes[:3]
-            print(f"dry run -- first {len(codes)}")
+            plan = plan[:6]
+            print(f"dry run -- first {len(plan)} call(s)")
+        cap = vsin_guard.remaining()
+        if len(plan) > cap:
+            print(f"::warning title=VSiN budget::{args.sport}: {len(plan)} calls planned, "
+                  f"budget allows {cap}. Deferring the lowest-priority "
+                  f"{len(plan) - cap} (furthest-out games).")
+            plan = plan[:cap]
 
         driver.set_script_timeout(45)
         js = """
@@ -402,33 +609,46 @@ def main():
           .then(r => r.text().then(t => done({status:r.status, body:t})))
           .catch(e => done({status:-1, body:String(e)}));
         """
-        sources = [s.strip().upper() for s in args.sources.split(",") if s.strip()]
 
-        for i, gc in enumerate(codes, 1):
-            for src in sources:
-                try:
-                    res = driver.execute_async_script(js, gc, src)
-                except Exception as e:
-                    failures.append((gc, src, f"script error: {e}"))
-                    continue
-                if res.get("status") != 200:
-                    failures.append((gc, src, f"HTTP {res.get('status')}"))
-                    continue
-                try:
-                    rows = parse_history(res["body"], gc, src, args.sport)
-                except NotCovered:
-                    not_covered[src] += 1          # expected; no dump, no noise
-                    time.sleep(args.throttle)
-                    continue
-                except ValueError as e:
-                    failures.append((gc, src, str(e)))
-                    bad = RAW_DIR / f"history_fail_{gc}_{src}.html"
-                    bad.write_text(res["body"], encoding="utf-8")
-                    continue
-                all_rows.extend(rows)
-                time.sleep(args.throttle)
-            if i % 20 == 0:
-                print(f"  {i}/{len(codes)} games, {len(all_rows)} rows, "
+        consecutive_bad = 0
+        for i, (gc, src) in enumerate(plan, 1):
+            vsin_guard.pace()
+            vsin_guard.note("history")
+            try:
+                res = driver.execute_async_script(js, gc, src)
+            except Exception as e:
+                res = {"status": -2, "body": f"script error: {e}"}
+            body = res.get("body") or ""
+            status = res.get("status")
+            # Pause page or HTTP 429: stop at once. Rows already collected are
+            # still written below -- the exit happens after the save.
+            if status == 429 or vsin_guard.is_rate_limited_text(body):
+                rate_limited = body or "HTTP 429"
+                break
+            _mark(state, gc, src)
+            if status != 200:
+                failures.append((gc, src, f"HTTP {status}" if status != -2 else body))
+                consecutive_bad += 1
+                if consecutive_bad >= 3:
+                    print("::error title=VSiN harvest::3 consecutive failed calls -- "
+                          "stopping this sport rather than keep hitting VSiN")
+                    break
+                continue
+            consecutive_bad = 0
+            try:
+                rows = parse_history(body, gc, src, args.sport)
+            except NotCovered:
+                not_covered[src] += 1          # expected; no dump, no noise
+                _mark(state, gc, src, not_covered=True)
+                continue
+            except ValueError as e:
+                failures.append((gc, src, str(e)))
+                bad = RAW_DIR / f"history_fail_{gc}_{src}.html"
+                bad.write_text(body, encoding="utf-8")
+                continue
+            all_rows.extend(rows)
+            if i % 40 == 0:
+                print(f"  {i}/{len(plan)} calls, {len(all_rows)} rows, "
                       f"{sum(not_covered.values())} not-covered, "
                       f"{len(failures)} failures")
     finally:
@@ -436,6 +656,9 @@ def main():
             driver.quit()
         except Exception:
             pass
+        if not args.dry_run:
+            _save_state(state)
+    _RATE_LIMITED[0] = rate_limited
 
     print(f"\ncollected {len(all_rows)} rows")
     for src, n in sorted(not_covered.items()):
@@ -513,5 +736,13 @@ def main():
           + (f", {dupes} already present)" if dupes else ")"))
 
 
+def _main_with_lockout():
+    try:
+        main()
+    finally:
+        if _RATE_LIMITED[0] is not None:
+            raise vsin_guard.VSiNRateLimited(_RATE_LIMITED[0], "history")
+
+
 if __name__ == "__main__":
-    main()
+    _main_with_lockout()

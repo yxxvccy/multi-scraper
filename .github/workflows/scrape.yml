@@ -46,7 +46,12 @@ on:
       sports:
         description: 'Sports to scrape (space-separated)'
         required: false
-        default: 'nfl cfb mlb nhl nba wnba ucl epl cbb wcbb'
+        default: 'nfl cfb nhl nba cbb wcbb ucl epl'
+
+# Shared with history.yml: never hit VSiN from two jobs at once.
+concurrency:
+  group: vsin
+  cancel-in-progress: false
 
 jobs:
   scrape:
@@ -86,8 +91,13 @@ jobs:
           # JSON export from data.vsin.com. Expires every 1-2 months; the run
           # fails with 'VSiN session expired' when it needs refreshing.
           VSIN_COOKIES: ${{ secrets.VSIN_COOKIES }}
+          VSIN_DAILY_BUDGET: ${{ vars.VSIN_DAILY_BUDGET }}
+          VSIN_HOURLY_BUDGET: ${{ vars.VSIN_HOURLY_BUDGET }}
+          VSIN_MIN_GAP: ${{ vars.VSIN_MIN_GAP }}
+        # Exits 0 with a warning while data/vsin_guard/lockout.json is active.
+        # mlb/wnba dropped from the default (offseason).
         run: |
-          SPORTS="${{ github.event.inputs.sports || 'nfl cfb mlb nhl nba wnba ucl epl cbb wcbb' }}"
+          SPORTS="${{ github.event.inputs.sports || 'nfl cfb nhl nba cbb wcbb ucl epl' }}"
           python multi_scraper.py --batch $SPORTS --once --auto-close 75
 
       - name: Upload raw HTML for debugging
@@ -99,7 +109,10 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
+      # always(): a rate-limited run must still push lockout.json, or the
+      # next scheduled run will not know to stand down.
       - name: Commit and push new data
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

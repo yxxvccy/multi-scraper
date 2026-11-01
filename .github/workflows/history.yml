@@ -43,22 +43,28 @@ name: Collect Split History
 # ---------------------------------------------------------------------------
 
 on:
+  # 2026-11-01 (after the VSiN lockout): 3 runs -> 2. The same-night backup
+  # existed only because a dropped run lost games for good once VSiN pulled
+  # them from the board. collect_history.py now also re-harvests yesterday's
+  # games from OUR OWN records by gamecode, so a dropped run is recovered by
+  # the next one. Post-slate moved to 12:21 AM EST so late West-coast tips
+  # are already past kickoff (changes freeze at kickoff -> one call is final).
   schedule:
-    - cron: '7 17 * * *'    #  1:07 PM ET — midweek capture, windows still wide
-    - cron: '7 2 * * *'     # 10:07 PM ET — post-slate, same night
-    - cron: '21 3 * * *'    # 11:21 PM ET — backup for the post-slate run
+    - cron: '7 17 * * *'    # 12:07 PM EST — today's early moves + future games
+    - cron: '21 5 * * *'    # 12:21 AM EST — post-slate, after the last tip
   workflow_dispatch:
     inputs:
       sports:
         description: 'Space-separated sports to harvest'
         required: false
-        default: 'cfb nfl mlb nhl nba wnba ucl epl cbb wcbb'
+        default: 'nfl nba nhl cbb wcbb cfb ucl epl'
 
 concurrency:
   # Two harvests at once would each read the file before the other writes,
   # so both would think their rows are new. Dedupe protects across runs,
   # not within a race.
-  group: collect-history
+  # Shared with scrape.yml: never hit VSiN from two jobs at once.
+  group: vsin
   cancel-in-progress: false
 
 jobs:
@@ -91,14 +97,32 @@ jobs:
           # JSON export from data.vsin.com. Expires every 1-2 months; the run
           # fails with 'VSiN session expired' when it needs refreshing.
           VSIN_COOKIES: ${{ secrets.VSIN_COOKIES }}
+          # Budget knobs -- set as repo Variables to tune without a commit.
+          VSIN_DAILY_BUDGET: ${{ vars.VSIN_DAILY_BUDGET }}
+          VSIN_HOURLY_BUDGET: ${{ vars.VSIN_HOURLY_BUDGET }}
+          VSIN_SPORT_CAP: ${{ vars.VSIN_SPORT_CAP }}
+          VSIN_FUTURE_CAP: ${{ vars.VSIN_FUTURE_CAP }}
+          VSIN_MIN_GAP: ${{ vars.VSIN_MIN_GAP }}
+        # Order = priority: sports with games TODAY first, so if the budget
+        # binds it is the midweek CFB board that waits, not tonight's slate.
+        # mlb/wnba dropped (offseason) -- add back via the input when they return.
+        # Exit 75 = VSiN rate-limited us: STOP. The old loop carried on to the
+        # next sport, i.e. kept knocking while paused.
         run: |
-          SPORTS="${{ github.event.inputs.sports || 'cfb nfl mlb nhl nba wnba ucl epl cbb wcbb' }}"
+          SPORTS="${{ github.event.inputs.sports || 'nfl nba nhl cbb wcbb cfb ucl epl' }}"
           mkdir -p data/history
           fail=0
           for s in $SPORTS; do
             echo "::group::$s"
-            python collect_history.py --sport "$s" || { echo "::error::harvest failed for $s"; fail=1; }
+            rc=0
+            python collect_history.py --sport "$s" || rc=$?
             echo "::endgroup::"
+            if [ $rc -eq 75 ]; then
+              echo "::error::VSiN rate limit hit during $s -- remaining sports skipped"
+              fail=1; break
+            elif [ $rc -ne 0 ]; then
+              echo "::error::harvest failed for $s"; fail=1
+            fi
           done
           exit $fail
 
@@ -116,7 +140,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A data/history/
+          git add -A data/history/ data/vsin_guard/
           git diff --cached --quiet || \
             git commit -m "Split history $(date -u +'%Y-%m-%d %H:%M UTC')"
           git fetch origin main

@@ -40,6 +40,7 @@ Usage:
 import argparse, csv, json, os, re, sys, time
 from datetime import datetime, timedelta
 from pathlib import Path
+import vsin_guard
 
 try:
     import pandas as pd
@@ -154,7 +155,10 @@ SPORT_INFO = {
         "dk_network": True,
         "dk_dropdown_label": "NCAA Basketball",
         "season": "Nov-Apr",
-        "gamecode_league": "NCAAB",
+        # VSiN emits "CBB" (e.g. 20261102CBB00624), verified from the
+        # 2026-10-29/30 history harvests. "NCAAB" made the strict cross-league
+        # filter reject 100% of rows -- no cbb timeseries file was ever written.
+        "gamecode_league": "CBB",
     },
     # --- Other Leagues (VSiN dropdown) ---
     "wcbb": {
@@ -560,6 +564,9 @@ def _load_vsin_cookies(driver) -> int:
 
 
 def _assert_vsin_authenticated(html: str, source_key: str = ""):
+    # Rate-limit pause FIRST: its page also carries "more games on today's
+    # board", so it used to be misreported as an expired session.
+    vsin_guard.check_rate_limited(html, source_key or "vsin")
     low = (html or "").lower()
     # Require BOTH the paywall copy and a near-empty board. A logged-in page
     # could plausibly still carry the upsell text in a hidden template; a
@@ -621,6 +628,8 @@ def fetch_vsin(url: str, driver, sport: str, source_key: str = "", wait_seconds:
     info = SPORT_INFO.get(sport, {})
     is_circa = "circa" in source_key or "bookid=circa" in url
 
+    vsin_guard.pace()
+    vsin_guard.note("pages")
     try:
         driver.get(url)
     except Exception as e:
@@ -744,6 +753,7 @@ def _vsin_ensure_book(driver, book: str, source_key: str = ""):
                             print(f"  [{source_key}] Book '{el.text.strip()}' already active.")
                             return
 
+                        vsin_guard.note("pages")   # toggle reloads the board
                         try:
                             el.click()
                             print(f"  [{source_key}] Clicked book toggle: '{el.text.strip()}'")
@@ -772,6 +782,7 @@ def _vsin_ensure_book(driver, book: str, source_key: str = ""):
             else:
                 new_url = current_url
             if new_url != current_url:
+                vsin_guard.note("pages")
                 driver.get(new_url)
                 time.sleep(5)
                 print(f"  [{source_key}] Reloaded page with bookid=circa")
@@ -860,6 +871,7 @@ def _vsin_ensure_tab(driver, sport: str, view_code: str):
                 new_url = current_url + f"&view={view_code}"
             else:
                 new_url = current_url + f"?view={view_code}"
+            vsin_guard.note("pages")
             driver.get(new_url)
             time.sleep(5)
             print(f"  [vsin] Reloaded with ?view={view_code}")
@@ -4087,6 +4099,12 @@ Examples:
     sources = [args.source] if args.source else None
 
     # --- Execute ---
+    # Exits 0 while a VSiN lockout is active; records page loads to the ledger.
+    vsin_guard.start_run("scrape")
+    if vsin_guard.remaining() <= 0:
+        print("::warning title=VSiN budget::rolling request budget exhausted -- "
+              "scrape skipped this run (see data/vsin_guard/ledger).")
+        return
     if args.gameday:
         run_gameday(
             sports, sources,

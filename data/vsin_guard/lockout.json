@@ -1,0 +1,8 @@
+{
+  "until_utc": "2026-11-02T16:59:00+00:00",
+  "until_et": "2026-11-02 11:59 ET",
+  "detected_utc": "2026-11-01T19:18:54+00:00",
+  "where": "seeded by hand: VSiN pause banner seen 2026-11-01 (harvester burst + manual DK/Circa toggling)",
+  "automated_requests_last_1h": 0,
+  "automated_requests_last_24h": 0
+}
