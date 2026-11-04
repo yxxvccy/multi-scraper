@@ -165,6 +165,12 @@ SPORT_INFO = {
         "display": "College Basketball (Women's)",
         "category": "other",
         "vsin_view": "wcbb",
+        # 2026-11-03: VSiN's new layout ignores ?view=wcbb and falls back to
+        # its "Other" default (CFL) -- every wcbb file so far held CFL or
+        # men's CBB rows. The working page is ?source=DK&sport=WCBB.
+        # Gamecodes there carry NO date prefix: "WCBB34953901" (checked live).
+        "vsin_sport": "WCBB",
+        "gamecode_league": "WCBB",
         "sbd_slug": None,          # SBD does not have WCBB splits page
         "dk_network": False,
         "season": "Nov-Apr",
@@ -217,6 +223,8 @@ def _vsin_dk_url(sport: str) -> str | None:
     info = SPORT_INFO.get(sport)
     if not info:
         return None
+    if info.get("vsin_sport"):
+        return f"https://data.vsin.com/betting-splits/?source=DK&sport={info['vsin_sport']}"
     if info["category"] == "major":
         # Sport-specific pages default to DraftKings book
         return f"https://data.vsin.com/{info['vsin_slug']}/betting-splits/"
@@ -230,6 +238,8 @@ def _vsin_circa_url(sport: str) -> str | None:
     info = SPORT_INFO.get(sport)
     if not info:
         return None
+    if info.get("vsin_sport"):
+        return f"https://data.vsin.com/betting-splits/?source=CIRCA&sport={info['vsin_sport']}"
     if info["category"] == "major":
         # Sport-specific page with Circa book selection
         return f"https://data.vsin.com/{info['vsin_slug']}/betting-splits/?bookid=circa"
@@ -657,7 +667,10 @@ def fetch_vsin(url: str, driver, sport: str, source_key: str = "", wait_seconds:
         _vsin_ensure_book(driver, "circa", source_key)
 
     # --- For "other" league sports, verify the correct sport tab is selected ---
-    if info.get("category") == "other" and "vsin_view" in info:
+    if info.get("category") == "other" and "vsin_view" in info \
+            and not info.get("vsin_sport"):
+        # (vsin_sport pages are already the right league; the tab-switch
+        # fallback would reload with ?view= and land on CFL again.)
         view_code = info["vsin_view"]
         _vsin_ensure_tab(driver, sport, view_code)
         time.sleep(wait_seconds)  # Wait for table data to reload
@@ -1181,7 +1194,8 @@ def _gamecode_cross_league_check(sport: str):
         """Pull the leading alpha-prefix (after the date digits)."""
         if not gc:
             return ""
-        m = re.match(r"^\d+([A-Z]+)", gc)
+        # Date prefix is optional: WCBB codes look like "WCBB34953901".
+        m = re.match(r"^\d*([A-Z]+)", gc)
         return m.group(1) if m else ""
 
     def _matches_known_marker(alpha: str) -> str:
@@ -1270,6 +1284,11 @@ def _parse_vsin_sp_table(soup, source_key: str, sport: str) -> list[dict]:
             gc_el = row.find(attrs={"data-gamecode": True})
             gamecode = gc_el.get("data-gamecode") if gc_el else None
             if not gamecode:
+                # WCBB pages put the history button (and so the gamecode) on
+                # the ROAD row only. A code-less row directly after a lone
+                # road row is that game's home row.
+                if order and len(by_game.get(order[-1], [])) == 1:
+                    by_game[order[-1]].append(row)
                 continue
 
             # Cross-league filter: skip rows whose gamecode identifies a
@@ -1294,7 +1313,12 @@ def _parse_vsin_sp_table(soup, source_key: str, sport: str) -> list[dict]:
                 if len(tds) < 11:
                     return None
                 team_link = row.find(class_="sp-team-link")
-                team = team_link.get_text(strip=True) if team_link else ""
+                # Leagues without team pages (WCBB) render the name as plain
+                # text in td.sp-cell-team, with no link -- every row was being
+                # dropped as "no team".
+                if team_link is None:
+                    team_link = row.find("td", class_="sp-cell-team")
+                team = team_link.get_text(" ", strip=True) if team_link else ""
                 # Strip sport suffixes like [W], [M]
                 team = re.sub(r"\s*[\[\(][WMwm][\]\)]\s*$", "", team).strip()
                 if not team:

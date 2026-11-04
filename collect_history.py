@@ -151,7 +151,8 @@ def _derive_game_id(gamecode: str, sport: str, away: str, home: str) -> str:
     id stamped with the harvest date would silently fail to join.
     """
     if not re.match(r"^\d{8}", str(gamecode or "")):
-        return ""
+        # Dateless gamecodes (WCBB34953901): take the id the scraper wrote.
+        return _TS_GAME_IDS.get(str(gamecode or ""), "")
     # Imported lazily: main() already pulls multi_scraper in, but --test must
     # stay runnable without selenium installed.
     from multi_scraper import make_game_id
@@ -363,6 +364,27 @@ RECOVER_DAYS = 1           # look back this many game-days in our own records
 _RATE_LIMITED = [None]
 
 
+# gamecode -> game_id, from the scraper's timeseries. Needed for sports whose
+# gamecodes carry no date (WCBB): it is the only source of their date and id.
+_TS_GAME_IDS: dict = {}
+
+
+def _load_ts_game_ids(sport: str):
+    today = datetime.now(vsin_guard.ET).date()
+    for d in (-1, 0, 1, 2):
+        f = Path("data") / "timeseries" / f"{sport}_{(today - timedelta(days=d)):%Y%m%d}.csv"
+        if not f.exists():
+            continue
+        try:
+            with open(f, newline="", encoding="utf-8") as fh:
+                for r in csv.DictReader(fh):
+                    gc, gid = (r.get("gamecode") or "").strip(), (r.get("game_id") or "").strip()
+                    if gc and gid:
+                        _TS_GAME_IDS.setdefault(gc, gid)
+        except Exception:
+            pass
+
+
 def _load_state() -> dict:
     try:
         return json.loads(STATE_FILE.read_text(encoding="utf-8"))
@@ -371,8 +393,9 @@ def _load_state() -> dict:
 
 
 def _save_state(state: dict):
-    cutoff = (datetime.now(vsin_guard.ET) - timedelta(days=10)).strftime("%Y%m%d")
-    state = {k: v for k, v in state.items() if k[:8] >= cutoff}
+    # Prune on last-fetch time, not the gamecode: WCBB codes have no date.
+    cutoff = (vsin_guard.now_utc() - timedelta(days=10)).isoformat(timespec="seconds")
+    state = {k: v for k, v in state.items() if (v.get("last") or "") >= cutoff}
     tmp = STATE_FILE.with_suffix(".tmp")
     tmp.write_text(json.dumps(state, indent=0, sort_keys=True), encoding="utf-8")
     tmp.replace(STATE_FILE)
@@ -384,7 +407,8 @@ def _mark(state, gc, src, not_covered=False):
 
 
 def _game_date(gc: str):
-    m = re.match(r"(\d{8})", gc or "")
+    m = re.match(r"(\d{8})", gc or "") or \
+        re.search(r"_(\d{8})_", _TS_GAME_IDS.get(gc or "", ""))
     if not m:
         return None
     try:
@@ -409,7 +433,12 @@ def _plan(codes, sources, state, circa_card=None):
                     last = None
             age_h = (now - last).total_seconds() / 3600 if last else None
             if gd is None:
-                bucket = 2
+                # Unknown date (dateless code not yet in the timeseries):
+                # treat as today -- fetch, but at most once an hour.
+                bucket = 1
+                if age_h is not None and age_h < TODAY_MIN_GAP_H:
+                    skipped["fetched <1h ago"] += 1
+                    continue
             elif gd < today:
                 last_et_date = last.astimezone(vsin_guard.ET).date() if last else None
                 if last_et_date and last_et_date > gd:
@@ -551,6 +580,7 @@ def main():
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
     state = _load_state()
+    _load_ts_game_ids(args.sport)
     is_foreign, _, _ = _gamecode_cross_league_check(args.sport)
     sources = [s.strip().upper() for s in args.sources.split(",") if s.strip()]
 
