@@ -159,12 +159,12 @@
       const sah = NUM(game.spread_away_handle_pct), sab = NUM(game.spread_away_bets_pct);
       const toh = NUM(game.total_over_handle_pct), tob = NUM(game.total_over_bets_pct);
       let sprSide = null, sprLabel = "";
-      if (sah && sab) {
+      if (sah && sab && sah !== sab) {
         if (sah > sab) { sprSide = "away"; sprLabel = game.away_team + (sl ? ` ${sl > 0 ? "+" : ""}${sl}` : ""); }
         else { sprSide = "home"; sprLabel = game.home_team + (sl ? ` ${sl > 0 ? String(-sl) : "+" + Math.abs(sl)}` : ""); }
       }
       let totSide = null, totLabel = "";
-      if (toh && tob) {
+      if (toh && tob && toh !== tob) {
         if (toh > tob) { totSide = "over"; totLabel = "Over " + (NUM(game.total_line) || ""); }
         else { totSide = "under"; totLabel = "Under " + (NUM(game.total_line) || ""); }
       }
@@ -176,6 +176,9 @@
        A handle/bets gap that appears in BOTH is far harder to explain as
        noise than one that appears in either alone. Returns null when the
        game has no Circa row (about 60% of the CFB card).            */
+    // Each book's handle-vs-bets gap must be at least this many points before
+    // it counts toward BOTH BOOKS or SPLIT. Below it, the book is "no lean".
+    const AGREE_MIN_DIV = 10;
     function bookAgreement(gameId, allData) {
       const rows = allData.filter(r => r.game_id === gameId);
       const latest = src => {
@@ -188,9 +191,21 @@
 
       const lD = sharpLean(dk), lC = sharpLean(ci);
 
+      // 2026-11-03: a book only "has a lean" on a market when its numbers are
+      // real and the gap is meaningful. Opening-night CBB showed why: Circa's
+      // thin cards post 0/0, 100/100 and 50/50 placeholder splits, and a
+      // 52%-vs-58% wobble was being read as "Circa says home", so nearly
+      // every overlap game was tagged SPLIT. Ties also used to fall through
+      // to home/under.
+      const degenerate = (h, b) => h <= 0 || b <= 0 || h >= 100 || b >= 100 ||
+                                   (h === 50 && b === 50);
+      const real = (r, hk, bk, div) =>
+        !degenerate(NUM(r[hk]), NUM(r[bk])) && div >= AGREE_MIN_DIV;
+
       // min(), not average: both books must clear the bar independently.
-      const mk = (sideD, sideC, divD, divC, labelD) => {
+      const mk = (sideD, sideC, divD, divC, labelD, hk, bk) => {
         if (!sideD || !sideC) return null;
+        if (!real(dk, hk, bk, divD) || !real(ci, hk, bk, divC)) return null;
         const agree = sideD === sideC;
         return {
           agree, side: sideD, otherSide: sideC, label: labelD,
@@ -201,10 +216,12 @@
 
       const spread = mk(lD.sprSide, lC.sprSide,
                         NUM(dk.spread_bets_handle_divergence),
-                        NUM(ci.spread_bets_handle_divergence), lD.sprLabel);
+                        NUM(ci.spread_bets_handle_divergence), lD.sprLabel,
+                        "spread_away_handle_pct", "spread_away_bets_pct");
       const total  = mk(lD.totSide, lC.totSide,
                         NUM(dk.total_bets_handle_divergence),
-                        NUM(ci.total_bets_handle_divergence), lD.totLabel);
+                        NUM(ci.total_bets_handle_divergence), lD.totLabel,
+                        "total_over_handle_pct", "total_over_bets_pct");
 
       const best = Math.max(spread && spread.agree ? spread.strength : 0,
                             total  && total.agree  ? total.strength  : 0);
