@@ -31,3 +31,27 @@ collected_at,sport,game_id,gamecode,source,book,kind,entry_idx,ts_iso,ts_date,ts
 2026-11-04T08:19:24,wcbb,wcbb_20261103_oral_roberts_tcu,WCBB34953907,DK,draftkings,change,2,2026-11-03T12:50:00,Nov 3,12:50 PM ET,19h ago,home,TCU [W],-33.5,100.0,100.0,148.5,100.0,100.0,,0.0,0.0
 2026-11-04T08:19:24,wcbb,wcbb_20261103_oral_roberts_tcu,WCBB34953907,DK,draftkings,change,3,2026-11-03T10:45:00,Nov 3,10:45 AM ET,21h ago,away,Oral Roberts [W],31.5,0.0,0.0,,0.0,0.0,,0.0,0.0
 2026-11-04T08:19:24,wcbb,wcbb_20261103_oral_roberts_tcu,WCBB34953907,DK,draftkings,change,3,2026-11-03T10:45:00,Nov 3,10:45 AM ET,21h ago,home,TCU [W],-31.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:27,wcbb,wcbb_20261104_campbell_nc_state,WCBB34958322,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Campbell [W],33.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:27,wcbb,wcbb_20261104_campbell_nc_state,WCBB34958322,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,NC State [W],-33.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:27,wcbb,wcbb_20261104_campbell_nc_state,WCBB34958322,DK,draftkings,change,2,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Campbell [W],33.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:27,wcbb,wcbb_20261104_campbell_nc_state,WCBB34958322,DK,draftkings,change,2,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,NC State [W],-33.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:32,wcbb,wcbb_20261104_detroit_mercy_illinois,WCBB34958323,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Detroit Mercy [W],35.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:32,wcbb,wcbb_20261104_detroit_mercy_illinois,WCBB34958323,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,Illinois [W],-35.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:32,wcbb,wcbb_20261104_detroit_mercy_illinois,WCBB34958323,DK,draftkings,change,2,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Detroit Mercy [W],35.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:32,wcbb,wcbb_20261104_detroit_mercy_illinois,WCBB34958323,DK,draftkings,change,2,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,Illinois [W],-35.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:36,wcbb,wcbb_20261104_queens_vanderbilt,WCBB34958324,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Queens [W],56.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:36,wcbb,wcbb_20261104_queens_vanderbilt,WCBB34958324,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,Vanderbilt [W],-56.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:36,wcbb,wcbb_20261104_queens_vanderbilt,WCBB34958324,DK,draftkings,change,2,2026-11-04T17:15:00,Nov 4,5:15 PM ET,26m ago,away,Queens [W],56.5,0.0,0.0,148.5,100.0,100.0,,0.0,0.0
+2026-11-04T17:41:36,wcbb,wcbb_20261104_queens_vanderbilt,WCBB34958324,DK,draftkings,change,2,2026-11-04T17:15:00,Nov 4,5:15 PM ET,26m ago,home,Vanderbilt [W],-56.5,100.0,100.0,148.5,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:36,wcbb,wcbb_20261104_queens_vanderbilt,WCBB34958324,DK,draftkings,change,3,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Queens [W],56.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:36,wcbb,wcbb_20261104_queens_vanderbilt,WCBB34958324,DK,draftkings,change,3,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,Vanderbilt [W],-56.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:41,wcbb,wcbb_20261104_fairleigh_dickinson_texas,WCBB34958325,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Fairleigh Dickinson [W],41.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:41,wcbb,wcbb_20261104_fairleigh_dickinson_texas,WCBB34958325,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,Texas [W],-41.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:41,wcbb,wcbb_20261104_fairleigh_dickinson_texas,WCBB34958325,DK,draftkings,change,2,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Fairleigh Dickinson [W],41.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:41,wcbb,wcbb_20261104_fairleigh_dickinson_texas,WCBB34958325,DK,draftkings,change,2,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,Texas [W],-41.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:46,wcbb,wcbb_20261104_stetson_louisville,WCBB34958326,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Stetson [W],49.5,11.0,50.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:46,wcbb,wcbb_20261104_stetson_louisville,WCBB34958326,DK,draftkings,open,1,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,Louisville [W],-49.5,89.0,50.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:46,wcbb,wcbb_20261104_stetson_louisville,WCBB34958326,DK,draftkings,change,2,2026-11-04T17:00:00,Nov 4,5:00 PM ET,41m ago,away,Stetson [W],49.5,8.0,33.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:46,wcbb,wcbb_20261104_stetson_louisville,WCBB34958326,DK,draftkings,change,2,2026-11-04T17:00:00,Nov 4,5:00 PM ET,41m ago,home,Louisville [W],-49.5,92.0,67.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:46,wcbb,wcbb_20261104_stetson_louisville,WCBB34958326,DK,draftkings,change,3,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,away,Stetson [W],49.5,11.0,50.0,,0.0,0.0,,0.0,0.0
+2026-11-04T17:41:46,wcbb,wcbb_20261104_stetson_louisville,WCBB34958326,DK,draftkings,change,3,2026-11-04T14:15:00,Nov 4,2:15 PM ET,3h ago,home,Louisville [W],-49.5,89.0,50.0,,0.0,0.0,,0.0,0.0
