@@ -141,3 +141,25 @@ collected_at,sport,game_id,gamecode,source,book,kind,entry_idx,ts_iso,ts_date,ts
 2026-11-06T08:23:19,wcbb,wcbb_20261105_uconn_michigan,WCBB1497169,CIRCA,circa,change,5,2026-11-05T11:40:00,Nov 5,11:40 AM ET,20h ago,home,MICHIGAN,9.5,50.0,50.0,142.0,0.0,0.0,325.0,50.0,50.0
 2026-11-06T08:23:19,wcbb,wcbb_20261105_uconn_michigan,WCBB1497169,CIRCA,circa,change,6,2026-11-04T23:25:00,Nov 4,11:25 PM ET,1d ago,away,UCONN,-10.5,50.0,50.0,,50.0,50.0,,50.0,50.0
 2026-11-06T08:23:19,wcbb,wcbb_20261105_uconn_michigan,WCBB1497169,CIRCA,circa,change,6,2026-11-04T23:25:00,Nov 4,11:25 PM ET,1d ago,home,MICHIGAN,10.5,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,open,1,2026-11-06T14:55:00,Nov 6,2:55 PM ET,2h ago,away,Morgan State [W],50.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,open,1,2026-11-06T14:55:00,Nov 6,2:55 PM ET,2h ago,home,Oklahoma State [W],-50.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,change,2,2026-11-06T16:25:00,Nov 6,4:25 PM ET,49m ago,away,Morgan State [W],50.5,1.0,20.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,change,2,2026-11-06T16:25:00,Nov 6,4:25 PM ET,49m ago,home,Oklahoma State [W],-50.5,99.0,80.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,change,3,2026-11-06T16:15:00,Nov 6,4:15 PM ET,59m ago,away,Morgan State [W],50.5,1.0,25.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,change,3,2026-11-06T16:15:00,Nov 6,4:15 PM ET,59m ago,home,Oklahoma State [W],-50.5,99.0,75.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,change,4,2026-11-06T15:25:00,Nov 6,3:25 PM ET,1h ago,away,Morgan State [W],50.5,1.0,33.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,change,4,2026-11-06T15:25:00,Nov 6,3:25 PM ET,1h ago,home,Oklahoma State [W],-50.5,99.0,67.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,change,5,2026-11-06T14:55:00,Nov 6,2:55 PM ET,2h ago,away,Morgan State [W],50.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:53,wcbb,wcbb_20261106_morgan_state_oklahoma_state,WCBB34971216,DK,draftkings,change,5,2026-11-06T14:55:00,Nov 6,2:55 PM ET,2h ago,home,Oklahoma State [W],-50.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,open,1,2026-11-06T14:55:00,Nov 6,2:55 PM ET,2h ago,away,Stonehill [W],45.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,open,1,2026-11-06T14:55:00,Nov 6,2:55 PM ET,2h ago,home,Notre Dame [W],-45.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,2,2026-11-06T17:05:00,Nov 6,5:05 PM ET,9m ago,away,Stonehill [W],45.5,0.0,17.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,2,2026-11-06T17:05:00,Nov 6,5:05 PM ET,9m ago,home,Notre Dame [W],-45.5,100.0,83.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,3,2026-11-06T16:25:00,Nov 6,4:25 PM ET,49m ago,away,Stonehill [W],45.5,1.0,20.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,3,2026-11-06T16:25:00,Nov 6,4:25 PM ET,49m ago,home,Notre Dame [W],-45.5,99.0,80.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,4,2026-11-06T16:15:00,Nov 6,4:15 PM ET,59m ago,away,Stonehill [W],45.5,1.0,25.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,4,2026-11-06T16:15:00,Nov 6,4:15 PM ET,59m ago,home,Notre Dame [W],-45.5,99.0,75.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,5,2026-11-06T15:25:00,Nov 6,3:25 PM ET,1h ago,away,Stonehill [W],45.5,1.0,33.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,5,2026-11-06T15:25:00,Nov 6,3:25 PM ET,1h ago,home,Notre Dame [W],-45.5,99.0,67.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,6,2026-11-06T14:55:00,Nov 6,2:55 PM ET,2h ago,away,Stonehill [W],45.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-06T17:14:57,wcbb,wcbb_20261106_stonehill_notre_dame,WCBB34971217,DK,draftkings,change,6,2026-11-06T14:55:00,Nov 6,2:55 PM ET,2h ago,home,Notre Dame [W],-45.5,0.0,0.0,,0.0,0.0,,0.0,0.0
