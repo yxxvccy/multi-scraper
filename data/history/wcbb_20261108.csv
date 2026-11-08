@@ -1,0 +1,13 @@
+collected_at,sport,game_id,gamecode,source,book,kind,entry_idx,ts_iso,ts_date,ts_time,ts_rel,side,team,spread,spread_handle_pct,spread_bets_pct,total,total_handle_pct,total_bets_pct,ml,ml_handle_pct,ml_bets_pct
+2026-11-08T07:18:18,wcbb,wcbb_20261107_minnesota_marquette,WCBB34976928,DK,draftkings,open,1,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,away,Minnesota [W],-9.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:18,wcbb,wcbb_20261107_minnesota_marquette,WCBB34976928,DK,draftkings,open,1,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,home,Marquette [W],9.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:18,wcbb,wcbb_20261107_minnesota_marquette,WCBB34976928,DK,draftkings,change,2,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,away,Minnesota [W],-9.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:18,wcbb,wcbb_20261107_minnesota_marquette,WCBB34976928,DK,draftkings,change,2,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,home,Marquette [W],9.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:24,wcbb,wcbb_20261107_southern_university_illinois,WCBB34976927,DK,draftkings,open,1,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,away,Southern University [W],34.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:24,wcbb,wcbb_20261107_southern_university_illinois,WCBB34976927,DK,draftkings,open,1,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,home,Illinois [W],-34.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:24,wcbb,wcbb_20261107_southern_university_illinois,WCBB34976927,DK,draftkings,change,2,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,away,Southern University [W],34.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:24,wcbb,wcbb_20261107_southern_university_illinois,WCBB34976927,DK,draftkings,change,2,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,home,Illinois [W],-34.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:28,wcbb,wcbb_20261107_northern_colorado_texas,WCBB34976926,DK,draftkings,open,1,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,away,Northern Colorado [W],34.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:28,wcbb,wcbb_20261107_northern_colorado_texas,WCBB34976926,DK,draftkings,open,1,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,home,Texas [W],-34.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:28,wcbb,wcbb_20261107_northern_colorado_texas,WCBB34976926,DK,draftkings,change,2,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,away,Northern Colorado [W],34.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-08T07:18:28,wcbb,wcbb_20261107_northern_colorado_texas,WCBB34976926,DK,draftkings,change,2,2026-11-07T11:00:00,Nov 7,11:00 AM ET,20h ago,home,Texas [W],-34.5,100.0,100.0,,0.0,0.0,,0.0,0.0
