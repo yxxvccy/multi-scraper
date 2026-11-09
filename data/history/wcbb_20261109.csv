@@ -1,0 +1,93 @@
+collected_at,sport,game_id,gamecode,source,book,kind,entry_idx,ts_iso,ts_date,ts_time,ts_rel,side,team,spread,spread_handle_pct,spread_bets_pct,total,total_handle_pct,total_bets_pct,ml,ml_handle_pct,ml_bets_pct
+2026-11-09T09:16:54,wcbb,wcbb_20261108_alabama_tulane,WCBB34982635,DK,draftkings,open,1,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,away,Alabama [W],,0.0,0.0,,0.0,0.0,-1.0,100.0,100.0
+2026-11-09T09:16:54,wcbb,wcbb_20261108_alabama_tulane,WCBB34982635,DK,draftkings,open,1,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,home,Tulane [W],,0.0,0.0,,0.0,0.0,950.0,0.0,0.0
+2026-11-09T09:16:54,wcbb,wcbb_20261108_alabama_tulane,WCBB34982635,DK,draftkings,change,2,2026-11-08T12:55:00,Nov 8,12:55 PM ET,20h ago,away,Alabama [W],-16.5,100.0,100.0,,0.0,0.0,-1.0,100.0,100.0
+2026-11-09T09:16:54,wcbb,wcbb_20261108_alabama_tulane,WCBB34982635,DK,draftkings,change,2,2026-11-08T12:55:00,Nov 8,12:55 PM ET,20h ago,home,Tulane [W],16.5,0.0,0.0,,0.0,0.0,800.0,0.0,0.0
+2026-11-09T09:16:54,wcbb,wcbb_20261108_alabama_tulane,WCBB34982635,DK,draftkings,change,3,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,away,Alabama [W],,0.0,0.0,,0.0,0.0,-1.0,100.0,100.0
+2026-11-09T09:16:54,wcbb,wcbb_20261108_alabama_tulane,WCBB34982635,DK,draftkings,change,3,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,home,Tulane [W],,0.0,0.0,,0.0,0.0,950.0,0.0,0.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,open,1,2026-11-08T08:10:00,Nov 8,8:10 AM ET,1d ago,away,Iowa [W],,0.0,0.0,,0.0,0.0,440.0,0.0,0.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,open,1,2026-11-08T08:10:00,Nov 8,8:10 AM ET,1d ago,home,UConn [W],,0.0,0.0,,0.0,0.0,-600.0,100.0,100.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,first_full,2,2026-11-08T13:15:00,Nov 8,1:15 PM ET,20h ago,away,Iowa [W],15.5,39.0,17.0,138.5,100.0,100.0,750.0,8.0,11.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,first_full,2,2026-11-08T13:15:00,Nov 8,1:15 PM ET,20h ago,home,UConn [W],-15.5,61.0,83.0,138.5,0.0,0.0,-1.0,92.0,89.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,3,2026-11-08T13:55:00,Nov 8,1:55 PM ET,19h ago,away,Iowa [W],15.5,19.0,11.0,138.5,100.0,100.0,750.0,8.0,9.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,3,2026-11-08T13:55:00,Nov 8,1:55 PM ET,19h ago,home,UConn [W],-15.5,81.0,89.0,138.5,0.0,0.0,-1.0,92.0,91.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,4,2026-11-08T13:45:00,Nov 8,1:45 PM ET,19h ago,away,Iowa [W],15.5,23.0,13.0,138.5,100.0,100.0,750.0,8.0,10.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,4,2026-11-08T13:45:00,Nov 8,1:45 PM ET,19h ago,home,UConn [W],-15.5,77.0,88.0,138.5,0.0,0.0,-1.0,92.0,90.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,5,2026-11-08T13:30:00,Nov 8,1:30 PM ET,19h ago,away,Iowa [W],15.5,33.0,14.0,138.5,100.0,100.0,750.0,8.0,10.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,5,2026-11-08T13:30:00,Nov 8,1:30 PM ET,19h ago,home,UConn [W],-15.5,67.0,86.0,138.5,0.0,0.0,-1.0,92.0,90.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,6,2026-11-08T13:15:00,Nov 8,1:15 PM ET,20h ago,away,Iowa [W],15.5,39.0,17.0,138.5,100.0,100.0,750.0,8.0,11.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,6,2026-11-08T13:15:00,Nov 8,1:15 PM ET,20h ago,home,UConn [W],-15.5,61.0,83.0,138.5,0.0,0.0,-1.0,92.0,89.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,7,2026-11-08T13:00:00,Nov 8,1:00 PM ET,20h ago,away,Iowa [W],15.5,39.0,17.0,,0.0,0.0,750.0,8.0,11.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,7,2026-11-08T13:00:00,Nov 8,1:00 PM ET,20h ago,home,UConn [W],-15.5,61.0,83.0,,0.0,0.0,-1.0,92.0,89.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,8,2026-11-08T12:40:00,Nov 8,12:40 PM ET,20h ago,away,Iowa [W],15.5,0.0,0.0,,0.0,0.0,750.0,8.0,11.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,8,2026-11-08T12:40:00,Nov 8,12:40 PM ET,20h ago,home,UConn [W],-15.5,100.0,100.0,,0.0,0.0,-1.0,92.0,89.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,9,2026-11-08T12:30:00,Nov 8,12:30 PM ET,20h ago,away,Iowa [W],14.5,0.0,0.0,,0.0,0.0,650.0,8.0,14.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,9,2026-11-08T12:30:00,Nov 8,12:30 PM ET,20h ago,home,UConn [W],-14.5,100.0,100.0,,0.0,0.0,-1.0,92.0,86.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,10,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,away,Iowa [W],13.5,0.0,0.0,,0.0,0.0,550.0,9.0,20.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,10,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,home,UConn [W],-13.5,100.0,100.0,,0.0,0.0,-800.0,91.0,80.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,11,2026-11-08T09:15:00,Nov 8,9:15 AM ET,1d ago,away,Iowa [W],12.5,0.0,0.0,,0.0,0.0,490.0,0.0,0.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,11,2026-11-08T09:15:00,Nov 8,9:15 AM ET,1d ago,home,UConn [W],-12.5,100.0,100.0,,0.0,0.0,-675.0,100.0,100.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,12,2026-11-08T08:10:00,Nov 8,8:10 AM ET,1d ago,away,Iowa [W],,0.0,0.0,,0.0,0.0,440.0,0.0,0.0
+2026-11-09T09:16:59,wcbb,wcbb_20261108_iowa_uconn,WCBB34982636,DK,draftkings,change,12,2026-11-08T08:10:00,Nov 8,8:10 AM ET,1d ago,home,UConn [W],,0.0,0.0,,0.0,0.0,-600.0,100.0,100.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,open,1,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,away,Kentucky [W],,0.0,0.0,,0.0,0.0,-250.0,0.0,0.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,open,1,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,home,NC State [W],,0.0,0.0,,0.0,0.0,205.0,100.0,100.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,first_full,2,2026-11-08T14:55:00,Nov 8,2:55 PM ET,18h ago,away,Kentucky [W],-5.5,66.0,50.0,136.5,56.0,75.0,-205.0,38.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,first_full,2,2026-11-08T14:55:00,Nov 8,2:55 PM ET,18h ago,home,NC State [W],5.5,34.0,50.0,136.5,44.0,25.0,170.0,62.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,3,2026-11-08T14:55:00,Nov 8,2:55 PM ET,18h ago,away,Kentucky [W],-5.5,66.0,50.0,136.5,56.0,75.0,-205.0,38.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,3,2026-11-08T14:55:00,Nov 8,2:55 PM ET,18h ago,home,NC State [W],5.5,34.0,50.0,136.5,44.0,25.0,170.0,62.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,4,2026-11-08T14:45:00,Nov 8,2:45 PM ET,18h ago,away,Kentucky [W],-5.5,0.0,0.0,136.5,56.0,75.0,-205.0,38.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,4,2026-11-08T14:45:00,Nov 8,2:45 PM ET,18h ago,home,NC State [W],5.5,100.0,100.0,136.5,44.0,25.0,170.0,62.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,5,2026-11-08T14:25:00,Nov 8,2:25 PM ET,18h ago,away,Kentucky [W],-5.5,0.0,0.0,136.5,49.0,67.0,-205.0,38.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,5,2026-11-08T14:25:00,Nov 8,2:25 PM ET,18h ago,home,NC State [W],5.5,100.0,100.0,136.5,51.0,33.0,170.0,62.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,6,2026-11-08T14:20:00,Nov 8,2:20 PM ET,18h ago,away,Kentucky [W],-5.5,0.0,0.0,136.5,33.0,50.0,-205.0,38.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,6,2026-11-08T14:20:00,Nov 8,2:20 PM ET,18h ago,home,NC State [W],5.5,100.0,100.0,136.5,67.0,50.0,170.0,62.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,7,2026-11-08T12:50:00,Nov 8,12:50 PM ET,20h ago,away,Kentucky [W],-5.5,0.0,0.0,136.5,0.0,0.0,-205.0,38.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,7,2026-11-08T12:50:00,Nov 8,12:50 PM ET,20h ago,home,NC State [W],5.5,100.0,100.0,136.5,100.0,100.0,170.0,62.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,8,2026-11-08T12:35:00,Nov 8,12:35 PM ET,20h ago,away,Kentucky [W],,0.0,0.0,136.5,0.0,0.0,-205.0,38.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,8,2026-11-08T12:35:00,Nov 8,12:35 PM ET,20h ago,home,NC State [W],,0.0,0.0,136.5,100.0,100.0,170.0,62.0,50.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,9,2026-11-08T12:15:00,Nov 8,12:15 PM ET,21h ago,away,Kentucky [W],,0.0,0.0,136.5,0.0,0.0,-205.0,0.0,0.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,9,2026-11-08T12:15:00,Nov 8,12:15 PM ET,21h ago,home,NC State [W],,0.0,0.0,136.5,100.0,100.0,170.0,100.0,100.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,10,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,away,Kentucky [W],,0.0,0.0,,0.0,0.0,-250.0,0.0,0.0
+2026-11-09T09:17:03,wcbb,wcbb_20261108_kentucky_nc_state,WCBB34982637,DK,draftkings,change,10,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,home,NC State [W],,0.0,0.0,,0.0,0.0,205.0,100.0,100.0
+2026-11-09T09:17:08,wcbb,wcbb_20261108_north_carolina_south_carolina,WCBB34982638,DK,draftkings,open,1,2026-11-08T08:10:00,Nov 8,8:10 AM ET,1d ago,away,North Carolina [W],,0.0,0.0,,0.0,0.0,550.0,0.0,0.0
+2026-11-09T09:17:08,wcbb,wcbb_20261108_north_carolina_south_carolina,WCBB34982638,DK,draftkings,open,1,2026-11-08T08:10:00,Nov 8,8:10 AM ET,1d ago,home,South Carolina [W],,0.0,0.0,,0.0,0.0,-800.0,100.0,100.0
+2026-11-09T09:17:08,wcbb,wcbb_20261108_north_carolina_south_carolina,WCBB34982638,DK,draftkings,change,2,2026-11-08T11:00:00,Nov 8,11:00 AM ET,22h ago,away,North Carolina [W],13.5,0.0,0.0,144.5,0.0,0.0,550.0,0.0,0.0
+2026-11-09T09:17:08,wcbb,wcbb_20261108_north_carolina_south_carolina,WCBB34982638,DK,draftkings,change,2,2026-11-08T11:00:00,Nov 8,11:00 AM ET,22h ago,home,South Carolina [W],-13.5,100.0,100.0,144.5,100.0,100.0,-800.0,100.0,100.0
+2026-11-09T09:17:08,wcbb,wcbb_20261108_north_carolina_south_carolina,WCBB34982638,DK,draftkings,change,3,2026-11-08T09:15:00,Nov 8,9:15 AM ET,1d ago,away,North Carolina [W],13.5,0.0,0.0,,0.0,0.0,550.0,0.0,0.0
+2026-11-09T09:17:08,wcbb,wcbb_20261108_north_carolina_south_carolina,WCBB34982638,DK,draftkings,change,3,2026-11-08T09:15:00,Nov 8,9:15 AM ET,1d ago,home,South Carolina [W],-13.5,100.0,100.0,,0.0,0.0,-800.0,100.0,100.0
+2026-11-09T09:17:08,wcbb,wcbb_20261108_north_carolina_south_carolina,WCBB34982638,DK,draftkings,change,4,2026-11-08T08:10:00,Nov 8,8:10 AM ET,1d ago,away,North Carolina [W],,0.0,0.0,,0.0,0.0,550.0,0.0,0.0
+2026-11-09T09:17:08,wcbb,wcbb_20261108_north_carolina_south_carolina,WCBB34982638,DK,draftkings,change,4,2026-11-08T08:10:00,Nov 8,8:10 AM ET,1d ago,home,South Carolina [W],,0.0,0.0,,0.0,0.0,-800.0,100.0,100.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,open,1,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,away,Utah State [W],44.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,open,1,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,home,USC [W],-44.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,change,2,2026-11-08T19:50:00,Nov 8,7:50 PM ET,13h ago,away,Utah State [W],48.5,0.0,0.0,140.5,83.0,40.0,,0.0,0.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,change,2,2026-11-08T19:50:00,Nov 8,7:50 PM ET,13h ago,home,USC [W],-48.5,100.0,100.0,140.5,17.0,60.0,,0.0,0.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,change,3,2026-11-08T19:45:00,Nov 8,7:45 PM ET,13h ago,away,Utah State [W],48.5,0.0,0.0,140.5,72.0,25.0,,0.0,0.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,change,3,2026-11-08T19:45:00,Nov 8,7:45 PM ET,13h ago,home,USC [W],-48.5,100.0,100.0,140.5,28.0,75.0,,0.0,0.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,change,4,2026-11-08T11:00:00,Nov 8,11:00 AM ET,22h ago,away,Utah State [W],44.5,0.0,0.0,140.5,0.0,0.0,,0.0,0.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,change,4,2026-11-08T11:00:00,Nov 8,11:00 AM ET,22h ago,home,USC [W],-44.5,100.0,100.0,140.5,100.0,100.0,,0.0,0.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,change,5,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,away,Utah State [W],44.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-09T09:17:12,wcbb,wcbb_20261108_utah_state_usc,WCBB34982639,DK,draftkings,change,5,2026-11-08T10:30:00,Nov 8,10:30 AM ET,22h ago,home,USC [W],-44.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-09T09:17:33,wcbb,wcbb_20261108_iowa_uconn,WCBB1499367,CIRCA,circa,open,1,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,away,IOWA,13.5,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:33,wcbb,wcbb_20261108_iowa_uconn,WCBB1499367,CIRCA,circa,open,1,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,home,UCONN,-13.5,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:33,wcbb,wcbb_20261108_iowa_uconn,WCBB1499367,CIRCA,circa,change,2,2026-11-08T12:35:00,Nov 8,12:35 PM ET,20h ago,away,IOWA,14.5,0.0,0.0,138.0,50.0,50.0,625.0,0.0,0.0
+2026-11-09T09:17:33,wcbb,wcbb_20261108_iowa_uconn,WCBB1499367,CIRCA,circa,change,2,2026-11-08T12:35:00,Nov 8,12:35 PM ET,20h ago,home,UCONN,-14.5,100.0,100.0,138.0,50.0,50.0,-900.0,100.0,100.0
+2026-11-09T09:17:33,wcbb,wcbb_20261108_iowa_uconn,WCBB1499367,CIRCA,circa,change,3,2026-11-08T11:50:00,Nov 8,11:50 AM ET,21h ago,away,IOWA,14.5,0.0,0.0,138.0,50.0,50.0,625.0,50.0,50.0
+2026-11-09T09:17:33,wcbb,wcbb_20261108_iowa_uconn,WCBB1499367,CIRCA,circa,change,3,2026-11-08T11:50:00,Nov 8,11:50 AM ET,21h ago,home,UCONN,-14.5,100.0,100.0,138.0,50.0,50.0,-900.0,50.0,50.0
+2026-11-09T09:17:33,wcbb,wcbb_20261108_iowa_uconn,WCBB1499367,CIRCA,circa,change,4,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,away,IOWA,13.5,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:33,wcbb,wcbb_20261108_iowa_uconn,WCBB1499367,CIRCA,circa,change,4,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,home,UCONN,-13.5,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:38,wcbb,wcbb_20261108_nc_state_kentucky,WCBB1499368,CIRCA,circa,open,1,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,away,NC STATE,0.0,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:38,wcbb,wcbb_20261108_nc_state_kentucky,WCBB1499368,CIRCA,circa,open,1,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,home,KENTUCKY,0.0,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:38,wcbb,wcbb_20261108_nc_state_kentucky,WCBB1499368,CIRCA,circa,change,2,2026-11-08T11:35:00,Nov 8,11:35 AM ET,21h ago,away,NC STATE,5.5,0.0,0.0,139.0,0.0,0.0,180.0,50.0,50.0
+2026-11-09T09:17:38,wcbb,wcbb_20261108_nc_state_kentucky,WCBB1499368,CIRCA,circa,change,2,2026-11-08T11:35:00,Nov 8,11:35 AM ET,21h ago,home,KENTUCKY,-5.5,100.0,100.0,139.0,100.0,100.0,-210.0,50.0,50.0
+2026-11-09T09:17:38,wcbb,wcbb_20261108_nc_state_kentucky,WCBB1499368,CIRCA,circa,change,3,2026-11-08T09:40:00,Nov 8,9:40 AM ET,23h ago,away,NC STATE,3.5,0.0,0.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:38,wcbb,wcbb_20261108_nc_state_kentucky,WCBB1499368,CIRCA,circa,change,3,2026-11-08T09:40:00,Nov 8,9:40 AM ET,23h ago,home,KENTUCKY,-3.5,100.0,100.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:38,wcbb,wcbb_20261108_nc_state_kentucky,WCBB1499368,CIRCA,circa,change,4,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,away,NC STATE,0.0,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:38,wcbb,wcbb_20261108_nc_state_kentucky,WCBB1499368,CIRCA,circa,change,4,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,home,KENTUCKY,0.0,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:44,wcbb,wcbb_20261108_s_carolina_n_carolina,WCBB1499369,CIRCA,circa,open,1,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,away,S CAROLINA,-11.0,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:44,wcbb,wcbb_20261108_s_carolina_n_carolina,WCBB1499369,CIRCA,circa,open,1,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,home,N CAROLINA,11.0,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:44,wcbb,wcbb_20261108_s_carolina_n_carolina,WCBB1499369,CIRCA,circa,change,2,2026-11-08T11:45:00,Nov 8,11:45 AM ET,21h ago,away,S CAROLINA,-14.5,100.0,100.0,143.5,100.0,100.0,-800.0,100.0,100.0
+2026-11-09T09:17:44,wcbb,wcbb_20261108_s_carolina_n_carolina,WCBB1499369,CIRCA,circa,change,2,2026-11-08T11:45:00,Nov 8,11:45 AM ET,21h ago,home,N CAROLINA,14.5,0.0,0.0,143.5,0.0,0.0,575.0,0.0,0.0
+2026-11-09T09:17:44,wcbb,wcbb_20261108_s_carolina_n_carolina,WCBB1499369,CIRCA,circa,change,3,2026-11-08T09:40:00,Nov 8,9:40 AM ET,23h ago,away,S CAROLINA,-13.0,100.0,100.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:44,wcbb,wcbb_20261108_s_carolina_n_carolina,WCBB1499369,CIRCA,circa,change,3,2026-11-08T09:40:00,Nov 8,9:40 AM ET,23h ago,home,N CAROLINA,13.0,0.0,0.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:44,wcbb,wcbb_20261108_s_carolina_n_carolina,WCBB1499369,CIRCA,circa,change,4,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,away,S CAROLINA,-11.0,50.0,50.0,,50.0,50.0,,50.0,50.0
+2026-11-09T09:17:44,wcbb,wcbb_20261108_s_carolina_n_carolina,WCBB1499369,CIRCA,circa,change,4,2026-11-08T05:40:00,Nov 8,5:40 AM ET,1d ago,home,N CAROLINA,11.0,50.0,50.0,,50.0,50.0,,50.0,50.0
