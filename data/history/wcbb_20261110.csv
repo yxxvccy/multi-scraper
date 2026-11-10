@@ -31,3 +31,19 @@ collected_at,sport,game_id,gamecode,source,book,kind,entry_idx,ts_iso,ts_date,ts
 2026-11-10T08:56:30,wcbb,wcbb_20261109_oregon_grand_canyon,WCBB34988277,DK,draftkings,change,13,2026-11-09T13:15:00,Nov 9,1:15 PM ET,19h ago,home,Grand Canyon [W],,0.0,0.0,137.5,0.0,0.0,320.0,0.0,0.0
 2026-11-10T08:56:30,wcbb,wcbb_20261109_oregon_grand_canyon,WCBB34988277,DK,draftkings,change,14,2026-11-09T13:00:00,Nov 9,1:00 PM ET,19h ago,away,Oregon [W],,0.0,0.0,,0.0,0.0,-410.0,100.0,100.0
 2026-11-10T08:56:30,wcbb,wcbb_20261109_oregon_grand_canyon,WCBB34988277,DK,draftkings,change,14,2026-11-09T13:00:00,Nov 9,1:00 PM ET,19h ago,home,Grand Canyon [W],,0.0,0.0,,0.0,0.0,320.0,0.0,0.0
+2026-11-10T17:34:19,wcbb,wcbb_20261110_iona_tcu,WCBB34993177,DK,draftkings,open,1,2026-11-10T12:25:00,Nov 10,12:25 PM ET,5h ago,away,Iona [W],46.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:19,wcbb,wcbb_20261110_iona_tcu,WCBB34993177,DK,draftkings,open,1,2026-11-10T12:25:00,Nov 10,12:25 PM ET,5h ago,home,TCU [W],-46.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:19,wcbb,wcbb_20261110_iona_tcu,WCBB34993177,DK,draftkings,change,2,2026-11-10T16:55:00,Nov 10,4:55 PM ET,39m ago,away,Iona [W],46.5,0.0,33.0,,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:19,wcbb,wcbb_20261110_iona_tcu,WCBB34993177,DK,draftkings,change,2,2026-11-10T16:55:00,Nov 10,4:55 PM ET,39m ago,home,TCU [W],-46.5,100.0,67.0,,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:19,wcbb,wcbb_20261110_iona_tcu,WCBB34993177,DK,draftkings,change,3,2026-11-10T12:25:00,Nov 10,12:25 PM ET,5h ago,away,Iona [W],46.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:19,wcbb,wcbb_20261110_iona_tcu,WCBB34993177,DK,draftkings,change,3,2026-11-10T12:25:00,Nov 10,12:25 PM ET,5h ago,home,TCU [W],-46.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,open,1,2026-11-10T12:30:00,Nov 10,12:30 PM ET,5h ago,away,Charleston [W],48.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,open,1,2026-11-10T12:30:00,Nov 10,12:30 PM ET,5h ago,home,USC [W],-48.5,100.0,100.0,,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,change,2,2026-11-10T17:00:00,Nov 10,5:00 PM ET,34m ago,away,Charleston [W],52.5,0.0,50.0,146.5,83.0,50.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,change,2,2026-11-10T17:00:00,Nov 10,5:00 PM ET,34m ago,home,USC [W],-52.5,100.0,50.0,146.5,17.0,50.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,change,3,2026-11-10T16:55:00,Nov 10,4:55 PM ET,39m ago,away,Charleston [W],52.5,0.0,50.0,146.5,100.0,100.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,change,3,2026-11-10T16:55:00,Nov 10,4:55 PM ET,39m ago,home,USC [W],-52.5,100.0,50.0,146.5,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,change,4,2026-11-10T16:40:00,Nov 10,4:40 PM ET,54m ago,away,Charleston [W],52.5,0.0,0.0,146.5,100.0,100.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,change,4,2026-11-10T16:40:00,Nov 10,4:40 PM ET,54m ago,home,USC [W],-52.5,100.0,100.0,146.5,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,change,5,2026-11-10T12:30:00,Nov 10,12:30 PM ET,5h ago,away,Charleston [W],48.5,0.0,0.0,,0.0,0.0,,0.0,0.0
+2026-11-10T17:34:25,wcbb,wcbb_20261110_charleston_usc,WCBB34993178,DK,draftkings,change,5,2026-11-10T12:30:00,Nov 10,12:30 PM ET,5h ago,home,USC [W],-48.5,100.0,100.0,,0.0,0.0,,0.0,0.0
